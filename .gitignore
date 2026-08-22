@@ -1,0 +1,31 @@
+node_modules/
+.expo/
+dist/
+ios/
+android/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+.env
+.env.local
+
+# macOS
+.DS_Store
+*.pem
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# ruby
+vendor/bundle/
+.ruby-version
+.ruby-gemset
+
+# local env files
+.env*.local

@@ -1,0 +1,57 @@
+{
+  "expo": {
+    "name": "Dippy",
+    "slug": "dippy-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "scheme": "dippy",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#00C8FF"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.dippy.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Dippy necesita acceso a la camara para escanear codigos de barras y tomar fotos de productos",
+        "NSPhotoLibraryUsageDescription": "Dippy necesita acceso a la galeria para seleccionar fotos de productos"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#00C8FF"
+      },
+      "package": "com.dippy.app",
+      "permissions": [
+        "CAMERA"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Dippy necesita acceso a la camara para escanear codigos de barras"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Dippy necesita acceso a la galeria para fotos de productos"
+        }
+      ],
+      "expo-asset"
+    ]
+  }
+}
