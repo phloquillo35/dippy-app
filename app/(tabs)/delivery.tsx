@@ -1,5 +1,18 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList, TextInput, Alert, Dimensions, Platform } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  FlatList,
+  TextInput,
+  Alert,
+  Dimensions,
+  Platform,
+  Modal,
+  KeyboardAvoidingView,
+} from 'react-native';
 import { Colors, Spacing, BorderRadius, Shadows } from '@/theme';
 import { useColors } from '@/theme/ThemeProvider';
 import { useDeliveryCartStore } from '@/store/deliveryCartStore';
@@ -7,25 +20,21 @@ import { useOrderStore } from '@/store/orderStore';
 import { useProductStore } from '@/store/productStore';
 import { useUserStore } from '@/store/userStore';
 import { Button } from '@/components/Button';
-import { CartItemCard } from '@/components/Card';
 import { formatCurrency } from '@/utils/uuid';
-import { PaymentMethod } from '@/types';
+import { PaymentMethod, Product } from '@/types';
 
 const { width } = Dimensions.get('window');
 
-type DeliveryView = 'dashboard' | 'menu' | 'whatsapp' | 'checkout' | 'orders' | 'order-detail' | 'payment';
+type DeliveryView = 'dashboard' | 'menu' | 'whatsapp' | 'orders' | 'order-detail';
 
 const DELIVERY_CATEGORIES = [
   { key: 'all', label: '📋 Todos', emoji: '📋' },
   { key: 'comida_preparada', label: '🍝 Comida', emoji: '🍝' },
-  { key: 'panaderia', label: '🥐 Panadería', emoji: '🥐' },
-  { key: 'gaseosas', label: '🥤 Bebidas', emoji: '🥤' },
-  { key: 'fiambres', label: '🥩 Fiambres', emoji: '🥩' },
 ];
 
 export default function DeliveryScreen() {
   const colors = useColors();
-  const currentUser = useUserStore(s => s.currentUser);
+  const currentUser = useUserStore((s) => s.currentUser);
   const [currentView, setCurrentView] = useState<DeliveryView>('dashboard');
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -33,14 +42,23 @@ export default function DeliveryScreen() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
   const [amountPaid, setAmountPaid] = useState<number>(0);
 
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [modalQuantity, setModalQuantity] = useState('1');
+  const [modalCustomerName, setModalCustomerName] = useState('');
+  const [modalCustomerPhone, setModalCustomerPhone] = useState('');
+  const [modalCustomerAddress, setModalCustomerAddress] = useState('');
+  const [modalNotes, setModalNotes] = useState('');
+
   const deliveryCart = useDeliveryCartStore();
   const orderStore = useOrderStore();
-  const products = useProductStore(s => s.getProducts());
+  const products = useProductStore((s) => s.getProducts());
 
-  const deliveryProducts = products.filter(p => p.salesChannels.includes('delivery'));
-  const filteredProducts = selectedCategory === 'all'
-    ? deliveryProducts
-    : deliveryProducts.filter(p => p.category === selectedCategory);
+  const deliveryProducts = products.filter((p) => p.salesChannels.includes('delivery'));
+  const filteredProducts =
+    selectedCategory === 'all'
+      ? deliveryProducts
+      : deliveryProducts.filter((p) => p.category === selectedCategory);
 
   const activeOrders = orderStore.getActiveOrders();
   const pendingOrders = orderStore.getPendingOrders();
@@ -49,60 +67,132 @@ export default function DeliveryScreen() {
     { emoji: '📋', label: 'Activos', value: activeOrders.length.toString(), color: colors.primary },
     { emoji: '⏳', label: 'Pendientes', value: pendingOrders.length.toString(), color: Colors.advertencia },
     { emoji: '💰', label: 'Ventas', value: orderStore.getSoldOrders().length.toString(), color: Colors.exito },
-    { emoji: '🛒', label: 'En Carrito', value: deliveryCart.getItemCount().toString(), color: Colors.celesteBandera },
   ];
 
-  const handleAddToCart = (product: any) => {
-    deliveryCart.addItem(product);
-    Alert.alert('✅ Agregado', `${product.name} agregado al carrito`);
-  };
+  const resetModal = useCallback(() => {
+    setSelectedProduct(null);
+    setModalQuantity('1');
+    setModalCustomerName('');
+    setModalCustomerPhone('');
+    setModalCustomerAddress('');
+    setModalNotes('');
+    setModalVisible(false);
+  }, []);
 
-  const handleConfirmOrder = () => {
-    if (deliveryCart.items.length === 0) {
-      Alert.alert('Carrito vacío', 'Agregá items al carrito');
+  const handleOpenProductModal = useCallback(
+    (product: Product) => {
+      resetModal();
+      setSelectedProduct(product);
+      setModalVisible(true);
+    },
+    [resetModal],
+  );
+
+  const handleCreateOrderFromModal = useCallback(() => {
+    if (!selectedProduct) return;
+
+    const qty = parseInt(modalQuantity, 10) || 1;
+    if (qty < 1) {
+      Alert.alert('Cantidad invalida', 'La cantidad debe ser al menos 1');
       return;
     }
-    if (!deliveryCart.customerName) {
-      Alert.alert('Faltan datos', 'Completá el nombre del cliente');
+    if (!modalCustomerName.trim()) {
+      Alert.alert('Faltan datos', 'El nombre del cliente es obligatorio');
       return;
     }
-    const orderId = deliveryCart.confirmOrder(currentUser?.name || 'Empleado');
+
+    deliveryCart.clearCart();
+    deliveryCart.setCustomerInfo({
+      name: modalCustomerName.trim(),
+      phone: modalCustomerPhone.trim(),
+      address: modalCustomerAddress.trim(),
+    });
+    if (modalNotes.trim()) {
+      deliveryCart.setNotes(modalNotes.trim());
+    }
+    deliveryCart.addItem(selectedProduct, undefined, qty);
+
+    const orderId = deliveryCart.confirmOrder(currentUser?.name || 'Empleado', 'menu');
+
     if (orderId) {
-      Alert.alert('✅ Pedido Confirmado', `Pedido #${orderId.slice(-6).toUpperCase()} creado`);
+      Alert.alert('✅ Pedido Creado', `Pedido #${orderId.slice(-6).toUpperCase()} creado`);
+      resetModal();
       setCurrentView('orders');
+    } else {
+      Alert.alert('Error', 'No se pudo crear el pedido');
     }
-  };
+  }, [
+    selectedProduct,
+    modalQuantity,
+    modalCustomerName,
+    modalCustomerPhone,
+    modalCustomerAddress,
+    modalNotes,
+    deliveryCart,
+    currentUser,
+    resetModal,
+  ]);
 
-  const handleAdvanceStatus = (orderId: string, currentStatus: string) => {
-    const statusFlow: Record<string, string> = {
-      pending: 'confirmed',
-      confirmed: 'preparing',
-      preparing: 'ready',
-      ready: 'delivering',
-      delivering: 'delivered',
-    };
-    const nextStatus = statusFlow[currentStatus];
-    if (nextStatus) {
-      orderStore.updateOrderStatus(orderId, nextStatus as any);
-      if (nextStatus === 'delivered') {
-        orderStore.markAsDelivered(orderId);
+  const handleAdvanceStatus = useCallback(
+    (orderId: string, currentStatus: string) => {
+      const statusFlow: Record<string, string> = {
+        pending: 'confirmed',
+        confirmed: 'preparing',
+        preparing: 'ready',
+        ready: 'delivering',
+        delivering: 'delivered',
+      };
+      const nextStatus = statusFlow[currentStatus];
+      if (nextStatus) {
+        orderStore.updateOrderStatus(orderId, nextStatus as any);
+        if (nextStatus === 'delivered') {
+          orderStore.markAsDelivered(orderId);
+        }
       }
-    }
-  };
+    },
+    [orderStore],
+  );
 
-  const getStatusColor = (status: string) => {
-    const statusColors: Record<string, string> = {
-      pending: Colors.advertencia,
-      confirmed: colors.primary,
-      preparing: Colors.celesteBandera,
-      ready: Colors.exito,
-      delivering: Colors.azulInstitucional,
-      delivered: Colors.exito,
-      sold: '#9E9E9E',
-      cancelled: Colors.error,
-    };
-    return statusColors[status] || '#9E9E9E';
-  };
+  const handleCancelOrder = useCallback(
+    (orderId: string) => {
+      Alert.alert(
+        'Cancelar Pedido',
+        'Seguro queres cancelar este pedido?',
+        [
+          { text: 'No', style: 'cancel' },
+          {
+            text: 'Si, cancelar',
+            style: 'destructive',
+            onPress: () => {
+              orderStore.cancelOrder(orderId);
+              Alert.alert('❌ Cancelado', 'El pedido fue cancelado');
+              if (selectedOrder === orderId) {
+                setCurrentView('orders');
+              }
+            },
+          },
+        ],
+      );
+    },
+    [orderStore, selectedOrder],
+  );
+
+  const getStatusColor = useCallback(
+    (status: string) => {
+      const statusColors: Record<string, string> = {
+        pending: Colors.advertencia,
+        confirmed: colors.primary,
+        preparing: Colors.celesteBandera,
+        ready: Colors.exito,
+        delivering: Colors.azulInstitucional,
+        delivered: Colors.exito,
+        sold: '#9E9E9E',
+        cancelled: Colors.error,
+      };
+      return statusColors[status] || '#9E9E9E';
+    },
+    [colors.primary],
+  );
 
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
@@ -120,10 +210,12 @@ export default function DeliveryScreen() {
 
   const renderDashboard = () => (
     <ScrollView style={styles.viewContainer} showsVerticalScrollIndicator={false}>
-      {/* Stats */}
       <View style={styles.statsGrid}>
         {stats.map((stat, index) => (
-          <View key={index} style={[styles.statCard, { backgroundColor: colors.card, ...Shadows.sm }]}>
+          <View
+            key={index}
+            style={[styles.statCard, { backgroundColor: colors.card, ...Shadows.sm }]}
+          >
             <Text style={styles.statEmoji}>{stat.emoji}</Text>
             <Text style={[styles.statValue, { color: stat.color }]}>{stat.value}</Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{stat.label}</Text>
@@ -131,14 +223,13 @@ export default function DeliveryScreen() {
         ))}
       </View>
 
-      {/* Action Buttons */}
       <View style={styles.actionsGrid}>
         <TouchableOpacity
           style={[styles.actionButton, { backgroundColor: colors.primary }]}
           onPress={() => setCurrentView('menu')}
         >
           <Text style={styles.actionEmoji}>🍽️</Text>
-          <Text style={styles.actionLabel}>Menú Digital</Text>
+          <Text style={styles.actionLabel}>Tomar Pedido</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.actionButton, { backgroundColor: Colors.celesteBandera }]}
@@ -146,16 +237,6 @@ export default function DeliveryScreen() {
         >
           <Text style={styles.actionEmoji}>📱</Text>
           <Text style={styles.actionLabel}>WhatsApp</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: Colors.amarilloAcento }]}
-          onPress={() => {
-            deliveryCart.setCustomerInfo({ name: 'Cliente' });
-            setCurrentView('checkout');
-          }}
-        >
-          <Text style={styles.actionEmoji}>📞</Text>
-          <Text style={styles.actionLabel}>Teléfono</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.actionButton, { backgroundColor: Colors.exito }]}
@@ -166,10 +247,11 @@ export default function DeliveryScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Active Orders */}
       {activeOrders.length > 0 && (
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>📋 Pedidos Activos</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+            📋 Pedidos Activos
+          </Text>
           {activeOrders.slice(0, 5).map((order) => (
             <TouchableOpacity
               key={order.id}
@@ -183,7 +265,12 @@ export default function DeliveryScreen() {
                 <Text style={[styles.orderId, { color: colors.textPrimary }]}>
                   #{order.id.slice(-6).toUpperCase()}
                 </Text>
-                <View style={[styles.statusBadge, { backgroundColor: `${getStatusColor(order.status)}20` }]}>
+                <View
+                  style={[
+                    styles.statusBadge,
+                    { backgroundColor: `${getStatusColor(order.status)}20` },
+                  ]}
+                >
                   <Text style={[styles.statusText, { color: getStatusColor(order.status) }]}>
                     {getStatusLabel(order.status)}
                   </Text>
@@ -200,35 +287,17 @@ export default function DeliveryScreen() {
         </View>
       )}
 
-      {/* Delivery Cart Preview */}
-      {deliveryCart.getItemCount() > 0 && (
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>🛒 Carrito de Delivery</Text>
-          <TouchableOpacity
-            style={[styles.cartPreview, { backgroundColor: Colors.celesteBandera }]}
-            onPress={() => setCurrentView('checkout')}
-          >
-            <View style={styles.cartPreviewInfo}>
-              <Text style={styles.cartPreviewEmoji}>🛒</Text>
-              <View>
-                <Text style={styles.cartPreviewTitle}>{deliveryCart.getItemCount()} items</Text>
-                <Text style={styles.cartPreviewSubtitle}>Listo para confirmar</Text>
-              </View>
-            </View>
-            <Text style={styles.cartPreviewTotal}>{formatCurrency(deliveryCart.getTotal())}</Text>
-            <Text style={styles.cartPreviewArrow}>→</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
       <View style={{ height: 20 }} />
     </ScrollView>
   );
 
   const renderMenu = () => (
     <View style={styles.viewContainer}>
-      {/* Category Filter */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.categoryScroll}
+      >
         {DELIVERY_CATEGORIES.map((cat) => (
           <TouchableOpacity
             key={cat.key}
@@ -239,17 +308,18 @@ export default function DeliveryScreen() {
             ]}
             onPress={() => setSelectedCategory(cat.key)}
           >
-            <Text style={[
-              styles.categoryText,
-              { color: selectedCategory === cat.key ? '#FFFFFF' : colors.textPrimary },
-            ]}>
+            <Text
+              style={[
+                styles.categoryText,
+                { color: selectedCategory === cat.key ? '#FFFFFF' : colors.textPrimary },
+              ]}
+            >
               {cat.label}
             </Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
 
-      {/* Products Grid */}
       <FlatList
         data={filteredProducts}
         keyExtractor={(item) => item.id}
@@ -258,7 +328,7 @@ export default function DeliveryScreen() {
         renderItem={({ item }) => (
           <TouchableOpacity
             style={[styles.productCard, { backgroundColor: colors.card, ...Shadows.sm }]}
-            onPress={() => handleAddToCart(item)}
+            onPress={() => handleOpenProductModal(item)}
           >
             <Text style={styles.productEmoji}>{item.emoji || '🍽️'}</Text>
             <Text style={[styles.productName, { color: colors.textPrimary }]} numberOfLines={2}>
@@ -270,41 +340,37 @@ export default function DeliveryScreen() {
             <Text style={[styles.productPrice, { color: colors.primary }]}>
               {formatCurrency(item.salePrice)}
             </Text>
-            <View style={[styles.addButton, { backgroundColor: colors.primary }]}>
-              <Text style={styles.addButtonText}>+</Text>
+            <View style={styles.tapHint}>
+              <Text style={[styles.tapHintText, { color: colors.textSecondary }]}>Toca para pedir</Text>
             </View>
           </TouchableOpacity>
         )}
       />
-
-      {/* Floating Cart Bar */}
-      {deliveryCart.getItemCount() > 0 && (
-        <TouchableOpacity
-          style={[styles.floatingCart, { backgroundColor: Colors.celesteBandera }]}
-          onPress={() => setCurrentView('checkout')}
-        >
-          <Text style={styles.floatingCartText}>
-            🛒 {deliveryCart.getItemCount()} items - {formatCurrency(deliveryCart.getTotal())}
-          </Text>
-          <Text style={styles.floatingCartArrow}>Ver Carrito →</Text>
-        </TouchableOpacity>
-      )}
     </View>
   );
 
   const renderWhatsApp = () => (
     <ScrollView style={styles.viewContainer} showsVerticalScrollIndicator={false}>
       <View style={styles.whatsappContainer}>
-        <Text style={[styles.whatsappTitle, { color: colors.textPrimary }]}>📱 Importar Pedido WhatsApp</Text>
+        <Text style={[styles.whatsappTitle, { color: colors.textPrimary }]}>
+          📱 Importar Pedido WhatsApp
+        </Text>
         <Text style={[styles.whatsappSubtitle, { color: colors.textSecondary }]}>
-          Pegá el mensaje del pedido de WhatsApp
+          Pega el mensaje del pedido de WhatsApp
         </Text>
 
         <TextInput
-          style={[styles.whatsappInput, { borderColor: colors.border, color: colors.textPrimary, backgroundColor: colors.card }]}
+          style={[
+            styles.whatsappInput,
+            {
+              borderColor: colors.border,
+              color: colors.textPrimary,
+              backgroundColor: colors.card,
+            },
+          ]}
           multiline
           numberOfLines={6}
-          placeholder="Ej: 2 pizza muzzarella&#10;1 coca 2.25&#10;3 medialunas"
+          placeholder={'Ej: 2 pizza muzzarella\n1 coca 2.25\n3 medialunas'}
           placeholderTextColor={colors.placeholder}
           value={whatsappMessage}
           onChangeText={setWhatsappMessage}
@@ -314,10 +380,13 @@ export default function DeliveryScreen() {
           title="📋 Importar Pedido"
           onPress={() => {
             if (!whatsappMessage.trim()) {
-              Alert.alert('Mensaje vacío', 'Pegá un mensaje de WhatsApp');
+              Alert.alert('Mensaje vacio', 'Pega un mensaje de WhatsApp');
               return;
             }
-            const order = orderStore.importFromWhatsApp(whatsappMessage, currentUser?.name || 'Empleado');
+            const order = orderStore.importFromWhatsApp(
+              whatsappMessage,
+              currentUser?.name || 'Empleado',
+            );
             if (order) {
               setWhatsappMessage('');
               Alert.alert('✅ Importado', `Pedido #${order.id.slice(-6).toUpperCase()} creado`);
@@ -329,93 +398,17 @@ export default function DeliveryScreen() {
           style={styles.importButton}
         />
 
-        <View style={[styles.helpCard, { backgroundColor: `${colors.primary}10`, borderColor: `${colors.primary}30` }]}>
+        <View
+          style={[
+            styles.helpCard,
+            { backgroundColor: `${colors.primary}10`, borderColor: `${colors.primary}30` },
+          ]}
+        >
           <Text style={[styles.helpTitle, { color: colors.primary }]}>💡 Formato esperado</Text>
           <Text style={[styles.helpText, { color: colors.textSecondary }]}>
-            {'• 2 pizza muzzarella\n• 1 coca 2.25\n• 3 medialunas\n• x2 sandwich de jamón'}
+            {'• 2 pizza muzzarella\n• 1 coca 2.25\n• 3 medialunas\n• x2 sandwich de jamon'}
           </Text>
         </View>
-      </View>
-    </ScrollView>
-  );
-
-  const renderCheckout = () => (
-    <ScrollView style={styles.viewContainer} showsVerticalScrollIndicator={false}>
-      <View style={styles.checkoutContainer}>
-        <Text style={[styles.checkoutTitle, { color: colors.textPrimary }]}>📦 Confirmar Pedido</Text>
-
-        {/* Customer Info */}
-        <View style={styles.checkoutSection}>
-          <Text style={[styles.checkoutLabel, { color: colors.textPrimary }]}>🧑 Datos del Cliente</Text>
-          <TextInput
-            style={[styles.input, { borderColor: colors.border, color: colors.textPrimary }]}
-            placeholder="Nombre"
-            placeholderTextColor={colors.placeholder}
-            value={deliveryCart.customerName}
-            onChangeText={(text) => deliveryCart.setCustomerInfo({ name: text })}
-          />
-          <TextInput
-            style={[styles.input, { borderColor: colors.border, color: colors.textPrimary }]}
-            placeholder="Teléfono"
-            placeholderTextColor={colors.placeholder}
-            value={deliveryCart.customerPhone}
-            onChangeText={(text) => deliveryCart.setCustomerInfo({ phone: text })}
-            keyboardType="phone-pad"
-          />
-          <TextInput
-            style={[styles.input, { borderColor: colors.border, color: colors.textPrimary }]}
-            placeholder="Dirección"
-            placeholderTextColor={colors.placeholder}
-            value={deliveryCart.customerAddress}
-            onChangeText={(text) => deliveryCart.setCustomerInfo({ address: text })}
-          />
-        </View>
-
-        {/* Order Items */}
-        <View style={styles.checkoutSection}>
-          <Text style={[styles.checkoutLabel, { color: colors.textPrimary }]}>🛒 Items ({deliveryCart.getItemCount()})</Text>
-          {deliveryCart.items.map((item) => (
-            <View key={item.id} style={[styles.checkoutItem, { borderBottomColor: colors.border }]}>
-              <Text style={[styles.checkoutItemName, { color: colors.textPrimary }]}>
-                {item.emoji} {item.productName}
-              </Text>
-              <View style={styles.checkoutItemRight}>
-                <Text style={[styles.checkoutItemQty, { color: colors.textSecondary }]}>x{item.quantity}</Text>
-                <Text style={[styles.checkoutItemPrice, { color: colors.primary }]}>
-                  {formatCurrency(item.totalPrice)}
-                </Text>
-              </View>
-            </View>
-          ))}
-        </View>
-
-        {/* Delivery Fee */}
-        <View style={styles.checkoutSection}>
-          <View style={styles.feeRow}>
-            <Text style={[styles.feeLabel, { color: colors.textSecondary }]}>🛵 Costo Delivery</Text>
-            <TextInput
-              style={[styles.feeInput, { borderColor: colors.border, color: colors.textPrimary }]}
-              value={deliveryCart.deliveryFee.toString()}
-              onChangeText={(text) => deliveryCart.setDeliveryFee(parseInt(text) || 0)}
-              keyboardType="numeric"
-            />
-          </View>
-        </View>
-
-        {/* Total */}
-        <View style={[styles.totalSection, { backgroundColor: colors.card, ...Shadows.sm }]}>
-          <Text style={[styles.totalLabel, { color: colors.textPrimary }]}>TOTAL</Text>
-          <Text style={[styles.totalValue, { color: colors.primary }]}>
-            {formatCurrency(deliveryCart.getTotal())}
-          </Text>
-        </View>
-
-        {/* Confirm Button */}
-        <Button
-          title="✅ Confirmar Pedido"
-          onPress={handleConfirmOrder}
-          style={styles.confirmButton}
-        />
       </View>
     </ScrollView>
   );
@@ -427,13 +420,19 @@ export default function DeliveryScreen() {
     return (
       <ScrollView style={styles.viewContainer} showsVerticalScrollIndicator={false}>
         <View style={styles.ordersContainer}>
-          {/* Active Orders */}
-          <Text style={[styles.ordersSectionTitle, { color: colors.textPrimary }]}>📋 Activos ({active.length})</Text>
+          <Text style={[styles.ordersSectionTitle, { color: colors.textPrimary }]}>
+            📋 Activos ({active.length})
+          </Text>
           {active.length === 0 ? (
-            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No hay pedidos activos</Text>
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+              No hay pedidos activos
+            </Text>
           ) : (
             active.map((order) => (
-              <View key={order.id} style={[styles.orderCard, { backgroundColor: colors.card, ...Shadows.sm }]}>
+              <View
+                key={order.id}
+                style={[styles.orderCard, { backgroundColor: colors.card, ...Shadows.sm }]}
+              >
                 <TouchableOpacity
                   onPress={() => {
                     setSelectedOrder(order.id);
@@ -444,62 +443,99 @@ export default function DeliveryScreen() {
                     <Text style={[styles.orderId, { color: colors.textPrimary }]}>
                       #{order.id.slice(-6).toUpperCase()}
                     </Text>
-                    <View style={[styles.statusBadge, { backgroundColor: `${getStatusColor(order.status)}20` }]}>
+                    <View
+                      style={[
+                        styles.statusBadge,
+                        { backgroundColor: `${getStatusColor(order.status)}20` },
+                      ]}
+                    >
                       <Text style={[styles.statusText, { color: getStatusColor(order.status) }]}>
                         {getStatusLabel(order.status)}
                       </Text>
                     </View>
                   </View>
                   <Text style={[styles.orderCustomer, { color: colors.textSecondary }]}>
-                    {order.customerName} - {order.customerPhone || 'Sin teléfono'}
+                    {order.customerName} - {order.customerPhone || 'Sin telefono'}
                   </Text>
                   <Text style={[styles.orderItems, { color: colors.textSecondary }]}>
-                    {order.items.map(i => `${i.emoji}${i.quantity}x ${i.productName}`).join(', ')}
+                    {order.items
+                      .map((i) => `${i.emoji || ''}${i.quantity}x ${i.productName}`)
+                      .join(', ')}
                   </Text>
                   <Text style={[styles.orderTotal, { color: colors.primary }]}>
                     {formatCurrency(order.total)}
                   </Text>
                 </TouchableOpacity>
 
-                {/* Advance Button */}
-                {order.status !== 'delivered' && order.status !== 'cancelled' && (
-                  <TouchableOpacity
-                    style={[styles.advanceButton, { backgroundColor: getStatusColor(order.status) }]}
-                    onPress={() => handleAdvanceStatus(order.id, order.status)}
-                  >
-                    <Text style={styles.advanceButtonText}>
-                      {order.status === 'pending' ? '✅ Confirmar' :
-                       order.status === 'confirmed' ? '👨‍🍳 Preparar' :
-                       order.status === 'preparing' ? '📦 Marcar Listo' :
-                       order.status === 'ready' ? '🛵 Salir a Entregar' :
-                       '📍 Marcar Entregado'}
-                    </Text>
-                  </TouchableOpacity>
-                )}
+                <View style={styles.orderActions}>
+                  {order.status !== 'delivered' && order.status !== 'cancelled' && (
+                    <TouchableOpacity
+                      style={[
+                        styles.advanceButton,
+                        { backgroundColor: getStatusColor(order.status) },
+                      ]}
+                      onPress={() => handleAdvanceStatus(order.id, order.status)}
+                    >
+                      <Text style={styles.advanceButtonText}>
+                        {order.status === 'pending'
+                          ? '✅ Confirmar'
+                          : order.status === 'confirmed'
+                          ? '👨‍🍳 Preparar'
+                          : order.status === 'preparing'
+                          ? '📦 Marcar Listo'
+                          : order.status === 'ready'
+                          ? '🛵 Salir a Entregar'
+                          : '📍 Marcar Entregado'}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                  {order.status !== 'cancelled' && order.status !== 'sold' && (
+                    <TouchableOpacity
+                      style={styles.cancelButton}
+                      onPress={() => handleCancelOrder(order.id)}
+                    >
+                      <Text style={styles.cancelButtonText}>✕ Cancelar</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
               </View>
             ))
           )}
 
-          {/* Sold Orders */}
-          <Text style={[styles.ordersSectionTitle, { color: colors.textPrimary, marginTop: Spacing.lg }]}>
+          <Text
+            style={[styles.ordersSectionTitle, { color: colors.textPrimary, marginTop: Spacing.lg }]}
+          >
             💰 Vendidos ({sold.length})
           </Text>
           {sold.slice(0, 10).map((order) => (
-            <View key={order.id} style={[styles.orderCard, { backgroundColor: colors.card, ...Shadows.sm, opacity: 0.7 }]}>
-              <View style={styles.orderHeader}>
-                <Text style={[styles.orderId, { color: colors.textPrimary }]}>
-                  #{order.id.slice(-6).toUpperCase()}
+            <View
+              key={order.id}
+              style={[
+                styles.orderCard,
+                { backgroundColor: colors.card, ...Shadows.sm, opacity: 0.7 },
+              ]}
+            >
+              <TouchableOpacity
+                onPress={() => {
+                  setSelectedOrder(order.id);
+                  setCurrentView('order-detail');
+                }}
+              >
+                <View style={styles.orderHeader}>
+                  <Text style={[styles.orderId, { color: colors.textPrimary }]}>
+                    #{order.id.slice(-6).toUpperCase()}
+                  </Text>
+                  <Text style={[styles.soldDate, { color: colors.textSecondary }]}>
+                    {new Date(order.soldAt || order.updatedAt).toLocaleDateString('es-AR')}
+                  </Text>
+                </View>
+                <Text style={[styles.orderCustomer, { color: colors.textSecondary }]}>
+                  {order.customerName} - {order.items.length} items
                 </Text>
-                <Text style={[styles.soldDate, { color: colors.textSecondary }]}>
-                  {new Date(order.soldAt || order.updatedAt).toLocaleDateString('es-AR')}
+                <Text style={[styles.orderTotal, { color: Colors.exito }]}>
+                  {formatCurrency(order.total)}
                 </Text>
-              </View>
-              <Text style={[styles.orderCustomer, { color: colors.textSecondary }]}>
-                {order.customerName} - {order.items.length} items
-              </Text>
-              <Text style={[styles.orderTotal, { color: Colors.exito }]}>
-                {formatCurrency(order.total)}
-              </Text>
+              </TouchableOpacity>
             </View>
           ))}
         </View>
@@ -516,19 +552,24 @@ export default function DeliveryScreen() {
 
     const handlePayment = () => {
       if (!paymentMethod) {
-        Alert.alert('Seleccioná método', 'Efectivo o Transferencia');
+        Alert.alert('Selecciona metodo', 'Efectivo o Transferencia');
         return;
       }
       if (paymentMethod === 'efectivo' && amountPaid < order.total) {
-        Alert.alert('Monto insuficiente', `El monto ($${amountPaid}) es menor al total ($${order.total})`);
+        Alert.alert(
+          'Monto insuficiente',
+          `El monto ($${amountPaid}) es menor al total ($${order.total})`,
+        );
         return;
       }
-      
+
       orderStore.markAsPaid(order.id, paymentMethod, amountPaid);
-      Alert.alert('✅ Pago Registrado', `${paymentMethod === 'efectivo' ? '💵 Efectivo' : '🏦 Transferencia'}: ${formatCurrency(amountPaid)}`);
+      Alert.alert(
+        '✅ Pago Registrado',
+        `${paymentMethod === 'efectivo' ? '💵 Efectivo' : '🏦 Transferencia'}: ${formatCurrency(amountPaid)}`,
+      );
       setPaymentMethod(null);
       setAmountPaid(0);
-      setCurrentView('orders');
     };
 
     return (
@@ -543,29 +584,42 @@ export default function DeliveryScreen() {
             </Text>
           </View>
 
-          {/* Status */}
-          <View style={[styles.detailStatus, { backgroundColor: `${getStatusColor(order.status)}15`, borderColor: `${getStatusColor(order.status)}30` }]}>
+          <View
+            style={[
+              styles.detailStatus,
+              {
+                backgroundColor: `${getStatusColor(order.status)}15`,
+                borderColor: `${getStatusColor(order.status)}30`,
+              },
+            ]}
+          >
             <Text style={[styles.detailStatusText, { color: getStatusColor(order.status) }]}>
               {getStatusLabel(order.status)}
             </Text>
           </View>
 
-          {/* Customer Info */}
           <View style={[styles.detailCard, { backgroundColor: colors.card, ...Shadows.sm }]}>
             <Text style={[styles.detailCardTitle, { color: colors.textPrimary }]}>🧑 Cliente</Text>
-            <Text style={[styles.detailText, { color: colors.textSecondary }]}>Nombre: {order.customerName}</Text>
-            <Text style={[styles.detailText, { color: colors.textSecondary }]}>Teléfono: {order.customerPhone || 'N/A'}</Text>
-            <Text style={[styles.detailText, { color: colors.textSecondary }]}>Dirección: {order.customerAddress || 'N/A'}</Text>
-            <Text style={[styles.detailText, { color: colors.textSecondary }]}>Fuente: {order.source}</Text>
+            <Text style={[styles.detailText, { color: colors.textSecondary }]}>
+              Nombre: {order.customerName}
+            </Text>
+            <Text style={[styles.detailText, { color: colors.textSecondary }]}>
+              Telefono: {order.customerPhone || 'N/A'}
+            </Text>
+            <Text style={[styles.detailText, { color: colors.textSecondary }]}>
+              Direccion: {order.customerAddress || 'N/A'}
+            </Text>
+            <Text style={[styles.detailText, { color: colors.textSecondary }]}>
+              Fuente: {order.source}
+            </Text>
           </View>
 
-          {/* Items */}
           <View style={[styles.detailCard, { backgroundColor: colors.card, ...Shadows.sm }]}>
             <Text style={[styles.detailCardTitle, { color: colors.textPrimary }]}>🛒 Items</Text>
             {order.items.map((item) => (
               <View key={item.id} style={styles.detailItem}>
                 <Text style={[styles.detailItemName, { color: colors.textPrimary }]}>
-                  {item.emoji} {item.productName}
+                  {item.emoji || ''} {item.productName}
                 </Text>
                 <Text style={[styles.detailItemQty, { color: colors.textSecondary }]}>
                   x{item.quantity} - {formatCurrency(item.totalPrice)}
@@ -580,60 +634,84 @@ export default function DeliveryScreen() {
             </View>
           </View>
 
-          {/* Payment Status */}
-          <View style={[styles.detailCard, { backgroundColor: order.paymentReceived ? `${Colors.exito}15` : `${Colors.advertencia}15`, borderColor: order.paymentReceived ? `${Colors.exito}30` : `${Colors.advertencia}30` }]}>
-            <Text style={[styles.detailCardTitle, { color: order.paymentReceived ? Colors.exito : Colors.advertencia }]}>
+          <View
+            style={[
+              styles.detailCard,
+              {
+                backgroundColor: order.paymentReceived
+                  ? `${Colors.exito}15`
+                  : `${Colors.advertencia}15`,
+                borderColor: order.paymentReceived ? `${Colors.exito}30` : `${Colors.advertencia}30`,
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.detailCardTitle,
+                { color: order.paymentReceived ? Colors.exito : Colors.advertencia },
+              ]}
+            >
               {order.paymentReceived ? '✅ Pago Registrado' : '⏳ Pago Pendiente'}
             </Text>
             {order.paymentReceived ? (
               <>
                 <Text style={[styles.detailText, { color: colors.textSecondary }]}>
-                  Método: {order.paymentMethod === 'efectivo' ? '💵 Efectivo' : '🏦 Transferencia'}
+                  Metodo:{' '}
+                  {order.paymentMethod === 'efectivo' ? '💵 Efectivo' : '🏦 Transferencia'}
                 </Text>
                 <Text style={[styles.detailText, { color: colors.textSecondary }]}>
                   Monto: {formatCurrency(order.amountPaid || 0)}
                 </Text>
-                {order.paymentMethod === 'efectivo' && order.amountPaid && order.amountPaid > order.total && (
-                  <Text style={[styles.detailText, { color: Colors.exito }]}>
-                    Vuelto: {formatCurrency(order.amountPaid - order.total)}
-                  </Text>
-                )}
+                {order.paymentMethod === 'efectivo' &&
+                  order.amountPaid &&
+                  order.amountPaid > order.total && (
+                    <Text style={[styles.detailText, { color: Colors.exito }]}>
+                      Vuelto: {formatCurrency(order.amountPaid - order.total)}
+                    </Text>
+                  )}
               </>
             ) : (
               <Text style={[styles.detailText, { color: colors.textSecondary }]}>
-                Registrar pago antes o después de entregar
+                Registrar pago antes o despues de entregar
               </Text>
             )}
           </View>
 
-          {/* Notes */}
           {order.notes && (
             <View style={[styles.detailCard, { backgroundColor: colors.card, ...Shadows.sm }]}>
               <Text style={[styles.detailCardTitle, { color: colors.textPrimary }]}>📝 Notas</Text>
-              <Text style={[styles.detailText, { color: colors.textSecondary }]}>{order.notes}</Text>
+              <Text style={[styles.detailText, { color: colors.textSecondary }]}>
+                {order.notes}
+              </Text>
             </View>
           )}
 
-          {/* Payment Section */}
           {!order.paymentReceived && (
             <View style={[styles.detailCard, { backgroundColor: colors.card, ...Shadows.sm }]}>
-              <Text style={[styles.detailCardTitle, { color: colors.textPrimary }]}>💰 Registrar Pago</Text>
-              
+              <Text style={[styles.detailCardTitle, { color: colors.textPrimary }]}>
+                💰 Registrar Pago
+              </Text>
+
               <View style={styles.paymentOptions}>
                 <TouchableOpacity
                   style={[
                     styles.paymentOption,
                     { borderColor: colors.border },
-                    paymentMethod === 'efectivo' && { borderColor: colors.primary, backgroundColor: `${colors.primary}15` },
+                    paymentMethod === 'efectivo' && {
+                      borderColor: colors.primary,
+                      backgroundColor: `${colors.primary}15`,
+                    },
                   ]}
                   onPress={() => setPaymentMethod('efectivo')}
                 >
                   <Text style={styles.paymentEmoji}>💵</Text>
-                  <Text style={[
-                    styles.paymentText,
-                    { color: colors.textPrimary },
-                    paymentMethod === 'efectivo' && { color: colors.primary, fontWeight: 'bold' },
-                  ]}>
+                  <Text
+                    style={[
+                      styles.paymentText,
+                      { color: colors.textPrimary },
+                      paymentMethod === 'efectivo' && { color: colors.primary, fontWeight: 'bold' },
+                    ]}
+                  >
                     Efectivo
                   </Text>
                 </TouchableOpacity>
@@ -642,16 +720,24 @@ export default function DeliveryScreen() {
                   style={[
                     styles.paymentOption,
                     { borderColor: colors.border },
-                    paymentMethod === 'transferencia' && { borderColor: colors.primary, backgroundColor: `${colors.primary}15` },
+                    paymentMethod === 'transferencia' && {
+                      borderColor: colors.primary,
+                      backgroundColor: `${colors.primary}15`,
+                    },
                   ]}
                   onPress={() => setPaymentMethod('transferencia')}
                 >
                   <Text style={styles.paymentEmoji}>🏦</Text>
-                  <Text style={[
-                    styles.paymentText,
-                    { color: colors.textPrimary },
-                    paymentMethod === 'transferencia' && { color: colors.primary, fontWeight: 'bold' },
-                  ]}>
+                  <Text
+                    style={[
+                      styles.paymentText,
+                      { color: colors.textPrimary },
+                      paymentMethod === 'transferencia' && {
+                        color: colors.primary,
+                        fontWeight: 'bold',
+                      },
+                    ]}
+                  >
                     Transferencia
                   </Text>
                 </TouchableOpacity>
@@ -659,18 +745,28 @@ export default function DeliveryScreen() {
 
               {paymentMethod === 'efectivo' && (
                 <View style={styles.amountSection}>
-                  <Text style={[styles.amountLabel, { color: colors.textSecondary }]}>💵 Monto entregado</Text>
+                  <Text style={[styles.amountLabel, { color: colors.textSecondary }]}>
+                    💵 Monto entregado
+                  </Text>
                   <TextInput
-                    style={[styles.amountInput, { borderColor: colors.border, color: colors.textPrimary }]}
+                    style={[
+                      styles.amountInput,
+                      { borderColor: colors.border, color: colors.textPrimary },
+                    ]}
                     value={amountPaid.toString()}
                     onChangeText={(text) => setAmountPaid(parseInt(text) || 0)}
                     keyboardType="numeric"
                     placeholder="0"
                     placeholderTextColor={colors.placeholder}
                   />
-                  
+
                   {amountPaid > 0 && (
-                    <View style={[styles.changeBox, { backgroundColor: `${Colors.exito}15`, borderColor: `${Colors.exito}30` }]}>
+                    <View
+                      style={[
+                        styles.changeBox,
+                        { backgroundColor: `${Colors.exito}15`, borderColor: `${Colors.exito}30` },
+                      ]}
+                    >
                       <Text style={[styles.changeLabel, { color: Colors.exito }]}>💵 Vuelto:</Text>
                       <Text style={[styles.changeValue, { color: Colors.exito }]}>
                         {formatCurrency(orderChange > 0 ? orderChange : 0)}
@@ -688,14 +784,19 @@ export default function DeliveryScreen() {
             </View>
           )}
 
-          {/* Advance Button */}
           {order.status !== 'delivered' && order.status !== 'cancelled' && (
             <Button
-              title={order.status === 'pending' ? '✅ Confirmar Pedido' :
-                     order.status === 'confirmed' ? '👨‍🍳 Empezar a Preparar' :
-                     order.status === 'preparing' ? '📦 Marcar como Listo' :
-                     order.status === 'ready' ? '🛵 Salir a Entregar' :
-                     '📍 Marcar como Entregado'}
+              title={
+                order.status === 'pending'
+                  ? '✅ Confirmar Pedido'
+                  : order.status === 'confirmed'
+                  ? '👨‍🍳 Empezar a Preparar'
+                  : order.status === 'preparing'
+                  ? '📦 Marcar como Listo'
+                  : order.status === 'ready'
+                  ? '🛵 Salir a Entregar'
+                  : '📍 Marcar como Entregado'
+              }
               onPress={() => {
                 handleAdvanceStatus(order.id, order.status);
                 setCurrentView('orders');
@@ -704,7 +805,6 @@ export default function DeliveryScreen() {
             />
           )}
 
-          {/* Mark as Sold */}
           {order.status === 'delivered' && order.paymentReceived && (
             <Button
               title="💰 Marcar como Vendido"
@@ -716,14 +816,189 @@ export default function DeliveryScreen() {
               style={styles.detailAdvanceButton}
             />
           )}
+
+          {order.status !== 'cancelled' && order.status !== 'sold' && (
+            <Button
+              title="✕ Cancelar Pedido"
+              variant="danger"
+              onPress={() => handleCancelOrder(order.id)}
+              style={styles.detailAdvanceButton}
+            />
+          )}
         </View>
       </ScrollView>
     );
   };
 
+  const renderProductModal = () => (
+    <Modal
+      visible={modalVisible}
+      transparent
+      animationType="slide"
+      onRequestClose={resetModal}
+    >
+      <KeyboardAvoidingView
+        style={styles.modalOverlay}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlayBackdrop}
+          activeOpacity={1}
+          onPress={resetModal}
+        />
+        <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
+          {selectedProduct && (
+            <>
+              <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
+                Crear Pedido
+              </Text>
+
+              <View
+                style={[
+                  styles.modalProductCard,
+                  { backgroundColor: colors.card, ...Shadows.sm },
+                ]}
+              >
+                <Text style={styles.modalProductEmoji}>
+                  {selectedProduct.emoji || '🍽️'}
+                </Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.modalProductName, { color: colors.textPrimary }]}>
+                    {selectedProduct.name}
+                  </Text>
+                  {selectedProduct.description && (
+                    <Text
+                      style={[styles.modalProductDesc, { color: colors.textSecondary }]}
+                      numberOfLines={1}
+                    >
+                      {selectedProduct.description}
+                    </Text>
+                  )}
+                  <Text style={[styles.modalProductPrice, { color: colors.primary }]}>
+                    {formatCurrency(selectedProduct.salePrice)}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={[styles.inputLabel, { color: colors.textPrimary }]}>Cantidad</Text>
+                <TextInput
+                  style={[
+                    styles.modalInput,
+                    { borderColor: colors.border, color: colors.textPrimary, backgroundColor: colors.card },
+                  ]}
+                  value={modalQuantity}
+                  onChangeText={setModalQuantity}
+                  keyboardType="numeric"
+                  placeholder="1"
+                  placeholderTextColor={colors.placeholder}
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={[styles.inputLabel, { color: colors.textPrimary }]}>
+                  Nombre del Cliente *
+                </Text>
+                <TextInput
+                  style={[
+                    styles.modalInput,
+                    { borderColor: colors.border, color: colors.textPrimary, backgroundColor: colors.card },
+                  ]}
+                  value={modalCustomerName}
+                  onChangeText={setModalCustomerName}
+                  placeholder="Nombre requerido"
+                  placeholderTextColor={colors.placeholder}
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={[styles.inputLabel, { color: colors.textPrimary }]}>Telefono</Text>
+                <TextInput
+                  style={[
+                    styles.modalInput,
+                    { borderColor: colors.border, color: colors.textPrimary, backgroundColor: colors.card },
+                  ]}
+                  value={modalCustomerPhone}
+                  onChangeText={setModalCustomerPhone}
+                  placeholder="Opcional"
+                  placeholderTextColor={colors.placeholder}
+                  keyboardType="phone-pad"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={[styles.inputLabel, { color: colors.textPrimary }]}>Direccion</Text>
+                <TextInput
+                  style={[
+                    styles.modalInput,
+                    { borderColor: colors.border, color: colors.textPrimary, backgroundColor: colors.card },
+                  ]}
+                  value={modalCustomerAddress}
+                  onChangeText={setModalCustomerAddress}
+                  placeholder="Opcional"
+                  placeholderTextColor={colors.placeholder}
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={[styles.inputLabel, { color: colors.textPrimary }]}>Notas</Text>
+                <TextInput
+                  style={[
+                    styles.modalInput,
+                    {
+                      borderColor: colors.border,
+                      color: colors.textPrimary,
+                      backgroundColor: colors.card,
+                      minHeight: 60,
+                      textAlignVertical: 'top',
+                    },
+                  ]}
+                  value={modalNotes}
+                  onChangeText={setModalNotes}
+                  placeholder="Ej: sin cebolla, bien cocido..."
+                  placeholderTextColor={colors.placeholder}
+                  multiline
+                />
+              </View>
+
+              <View
+                style={[
+                  styles.modalTotalPreview,
+                  { backgroundColor: colors.card, ...Shadows.sm },
+                ]}
+              >
+                <Text style={[styles.modalTotalLabel, { color: colors.textPrimary }]}>
+                  Total Estimado
+                </Text>
+                <Text style={[styles.modalTotalValue, { color: colors.primary }]}>
+                  {formatCurrency(
+                    selectedProduct.salePrice * (parseInt(modalQuantity, 10) || 1),
+                  )}
+                </Text>
+              </View>
+
+              <View style={styles.modalActions}>
+                <Button
+                  title="Cancelar"
+                  variant="outline"
+                  onPress={resetModal}
+                  style={{ flex: 1, marginRight: Spacing.sm }}
+                />
+                <Button
+                  title="🛒 Crear Pedido"
+                  onPress={handleCreateOrderFromModal}
+                  style={{ flex: 1 }}
+                />
+              </View>
+            </>
+          )}
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.primary }]}>
         <View style={styles.headerContent}>
           <View style={styles.headerLeft}>
@@ -731,12 +1006,15 @@ export default function DeliveryScreen() {
             <View>
               <Text style={styles.headerTitle}>Delivery</Text>
               <Text style={styles.headerSubtitle}>
-                {currentView === 'dashboard' ? 'Panel de Pedidos' :
-                 currentView === 'menu' ? 'Menú Digital' :
-                 currentView === 'whatsapp' ? 'Importar WhatsApp' :
-                 currentView === 'checkout' ? 'Confirmar Pedido' :
-                 currentView === 'orders' ? 'Gestión de Pedidos' :
-                 'Detalle del Pedido'}
+                {currentView === 'dashboard'
+                  ? 'Panel de Pedidos'
+                  : currentView === 'menu'
+                  ? 'Tomar Pedido'
+                  : currentView === 'whatsapp'
+                  ? 'Importar WhatsApp'
+                  : currentView === 'orders'
+                  ? 'Gestion de Pedidos'
+                  : 'Detalle del Pedido'}
               </Text>
             </View>
           </View>
@@ -748,13 +1026,13 @@ export default function DeliveryScreen() {
         </View>
       </View>
 
-      {/* Content */}
       {currentView === 'dashboard' && renderDashboard()}
       {currentView === 'menu' && renderMenu()}
       {currentView === 'whatsapp' && renderWhatsApp()}
-      {currentView === 'checkout' && renderCheckout()}
       {currentView === 'orders' && renderOrders()}
       {currentView === 'order-detail' && renderOrderDetail()}
+
+      {renderProductModal()}
     </View>
   );
 }
@@ -803,7 +1081,7 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   statCard: {
-    width: (width - Spacing.md * 2 - Spacing.sm * 3) / 4,
+    width: (width - Spacing.md * 2 - Spacing.sm * 2) / 3,
     alignItems: 'center',
     paddingVertical: Spacing.md,
     borderRadius: BorderRadius.lg,
@@ -823,11 +1101,12 @@ const styles = StyleSheet.create({
   actionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    padding: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    paddingBottom: Spacing.md,
     gap: Spacing.sm,
   },
   actionButton: {
-    width: (width - Spacing.md * 2 - Spacing.sm * 3) / 4,
+    width: (width - Spacing.md * 2 - Spacing.sm * 2) / 3,
     alignItems: 'center',
     paddingVertical: Spacing.lg,
     borderRadius: BorderRadius.lg,
@@ -890,51 +1169,40 @@ const styles = StyleSheet.create({
   soldDate: {
     fontSize: 12,
   },
-  advanceButton: {
+  orderActions: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
     marginTop: Spacing.sm,
+  },
+  advanceButton: {
+    flex: 1,
     padding: Spacing.sm,
     borderRadius: BorderRadius.sm,
     alignItems: 'center',
   },
   advanceButtonText: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
   },
-  cartPreview: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: Spacing.md,
-    borderRadius: BorderRadius.lg,
-  },
-  cartPreviewInfo: {
+  cancelButton: {
     flex: 1,
-    flexDirection: 'row',
+    padding: Spacing.sm,
+    borderRadius: BorderRadius.sm,
     alignItems: 'center',
+    backgroundColor: Colors.error,
   },
-  cartPreviewEmoji: {
-    fontSize: 32,
-    marginRight: Spacing.sm,
-  },
-  cartPreviewTitle: {
+  cancelButtonText: {
     color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 13,
+    fontWeight: '600',
   },
-  cartPreviewSubtitle: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    opacity: 0.8,
+  tapHint: {
+    marginTop: Spacing.xs,
   },
-  cartPreviewTotal: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginRight: Spacing.sm,
-  },
-  cartPreviewArrow: {
-    color: '#FFFFFF',
-    fontSize: 24,
+  tapHintText: {
+    fontSize: 10,
+    fontStyle: 'italic',
   },
   categoryScroll: {
     paddingHorizontal: Spacing.md,
@@ -960,7 +1228,6 @@ const styles = StyleSheet.create({
     padding: Spacing.md,
     borderRadius: BorderRadius.lg,
     marginBottom: Spacing.sm,
-    position: 'relative',
   },
   productEmoji: {
     fontSize: 40,
@@ -980,43 +1247,6 @@ const styles = StyleSheet.create({
   productPrice: {
     fontSize: 16,
     fontWeight: 'bold',
-  },
-  addButton: {
-    position: 'absolute',
-    top: Spacing.sm,
-    right: Spacing.sm,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  addButtonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  floatingCart: {
-    position: 'absolute',
-    bottom: Spacing.md,
-    left: Spacing.md,
-    right: Spacing.md,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    ...Shadows.lg,
-  },
-  floatingCartText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  floatingCartArrow: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
   },
   whatsappContainer: {
     padding: Spacing.md,
@@ -1055,89 +1285,6 @@ const styles = StyleSheet.create({
   helpText: {
     fontSize: 13,
     lineHeight: 20,
-  },
-  checkoutContainer: {
-    padding: Spacing.md,
-  },
-  checkoutTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: Spacing.lg,
-  },
-  checkoutSection: {
-    marginBottom: Spacing.lg,
-  },
-  checkoutLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: Spacing.sm,
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    fontSize: 14,
-    marginBottom: Spacing.sm,
-  },
-  checkoutItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: Spacing.sm,
-    borderBottomWidth: 1,
-  },
-  checkoutItemName: {
-    fontSize: 14,
-    flex: 1,
-  },
-  checkoutItemRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  checkoutItemQty: {
-    fontSize: 14,
-  },
-  checkoutItemPrice: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  feeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  feeLabel: {
-    fontSize: 14,
-  },
-  feeInput: {
-    width: 80,
-    borderWidth: 1,
-    borderRadius: BorderRadius.sm,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 4,
-    textAlign: 'center',
-    fontSize: 14,
-  },
-  totalSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    marginBottom: Spacing.lg,
-  },
-  totalLabel: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  totalValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  confirmButton: {
-    marginBottom: Spacing.xl,
   },
   ordersContainer: {
     padding: Spacing.md,
@@ -1279,5 +1426,88 @@ const styles = StyleSheet.create({
   },
   paymentButton: {
     marginTop: Spacing.md,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  modalOverlayBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    borderTopLeftRadius: BorderRadius.xl,
+    borderTopRightRadius: BorderRadius.xl,
+    padding: Spacing.lg,
+    maxHeight: '85%',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: Spacing.md,
+    textAlign: 'center',
+  },
+  modalProductCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    marginBottom: Spacing.md,
+  },
+  modalProductEmoji: {
+    fontSize: 40,
+    marginRight: Spacing.md,
+  },
+  modalProductName: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  modalProductDesc: {
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  modalProductPrice: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  inputGroup: {
+    marginBottom: Spacing.md,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: Spacing.xs,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    fontSize: 14,
+  },
+  modalTotalPreview: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    marginBottom: Spacing.md,
+  },
+  modalTotalLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  modalTotalValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
   },
 });
