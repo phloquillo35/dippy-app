@@ -21,18 +21,21 @@ const CATEGORIES: Array<{ key: ProductCategory | 'all'; label: string; emoji: st
 
 export default function ProductsScreen() {
   const colors = useColors();
-  const products = useProductStore(s => s.getProducts());
+  const allProducts = useProductStore(s => s.getProducts());
   const searchProducts = useProductStore(s => s.searchProducts);
   const getProductsByCategory = useProductStore(s => s.getProductsByCategory);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | 'all'>('all');
 
+  // Only show STORE products here — delivery products are in the Delivery tab
+  const products = allProducts.filter(p => p.salesChannels.includes('store'));
+
   const getFilteredProducts = (): Product[] => {
     if (searchQuery.trim()) {
-      return searchProducts(searchQuery);
+      return searchProducts(searchQuery).filter(p => p.salesChannels.includes('store'));
     }
     if (selectedCategory !== 'all') {
-      return getProductsByCategory(selectedCategory);
+      return getProductsByCategory(selectedCategory).filter(p => p.salesChannels.includes('store'));
     }
     return products;
   };

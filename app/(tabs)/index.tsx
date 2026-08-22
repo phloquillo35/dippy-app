@@ -24,6 +24,7 @@ export default function HomeScreen() {
 
   const storeProducts = products.filter(p => p.salesChannels.includes('store'));
   const deliveryProducts = products.filter(p => p.salesChannels.includes('delivery'));
+  const lowStockStoreProducts = lowStockProducts.filter(p => p.salesChannels.includes('store'));
 
   const quickActions = [
     { emoji: '📱', label: 'Escanear', action: () => router.push('/scanner'), color: colors.primary },
@@ -38,10 +39,10 @@ export default function HomeScreen() {
   }
 
   const stats = [
-    { emoji: '📦', label: 'Productos', value: products.length.toString(), color: colors.primary },
+    { emoji: '📦', label: 'Productos', value: storeProducts.length.toString(), color: colors.primary },
     { emoji: '🏢', label: 'Proveedores', value: providers.length.toString(), color: Colors.amarilloAcento },
     { emoji: '🛒', label: 'En Carrito', value: cartItems.toString(), color: Colors.exito },
-    { emoji: '⚠️', label: 'Stock Bajo', value: lowStockProducts.length.toString(), color: lowStockProducts.length > 0 ? Colors.error : Colors.exito },
+    { emoji: '⚠️', label: 'Stock Bajo', value: lowStockStoreProducts.length.toString(), color: lowStockStoreProducts.length > 0 ? Colors.error : Colors.exito },
   ];
 
   return (
@@ -118,13 +119,13 @@ export default function HomeScreen() {
       </View>
 
       {/* Low Stock Alert */}
-      {lowStockProducts.length > 0 && (
+      {lowStockStoreProducts.length > 0 && (
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: Colors.error }]}>
-            ⚠️ Stock Bajo ({lowStockProducts.length})
+            ⚠️ Stock Bajo ({lowStockStoreProducts.length})
           </Text>
           <View style={[styles.alertCard, { backgroundColor: `${Colors.error}15`, borderColor: `${Colors.error}30` }]}>
-            {lowStockProducts.slice(0, 3).map((product) => (
+            {lowStockStoreProducts.slice(0, 3).map((product) => (
               <View key={product.id} style={styles.alertItem}>
                 <Text style={styles.alertEmoji}>{product.emoji || '📦'}</Text>
                 <Text style={[styles.alertName, { color: colors.textPrimary }]}>{product.name}</Text>
@@ -133,10 +134,10 @@ export default function HomeScreen() {
                 </Text>
               </View>
             ))}
-            {lowStockProducts.length > 3 && (
+            {lowStockStoreProducts.length > 3 && (
               <TouchableOpacity onPress={() => router.push('/(tabs)/products')}>
                 <Text style={[styles.alertMore, { color: colors.primary }]}>
-                  Ver todos ({lowStockProducts.length})
+                  Ver todos ({lowStockStoreProducts.length})
                 </Text>
               </TouchableOpacity>
             )}
