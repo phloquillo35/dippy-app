@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Alert, TextInput } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Alert, TextInput, TouchableOpacity } from 'react-native';
 import { Colors, Spacing, BorderRadius, Shadows } from '@/theme';
 import { useColors } from '@/theme/ThemeProvider';
 import { useCartStore } from '@/store/cartStore';
@@ -8,6 +8,7 @@ import { CartItemCard } from '@/components/Card';
 import { Button } from '@/components/Button';
 import { sendReceiptWhatsApp } from '@/utils/whatsapp';
 import { formatCurrency } from '@/utils/uuid';
+import { PaymentMethod } from '@/types';
 
 export default function CartScreen() {
   const colors = useColors();
@@ -15,6 +16,8 @@ export default function CartScreen() {
     items,
     notes,
     discount,
+    paymentMethod,
+    amountPaid,
     setNotes,
     setDiscount,
     removeItem,
@@ -22,23 +25,35 @@ export default function CartScreen() {
     getSubtotal,
     getTotal,
     getItemCount,
+    getChange,
+    setPaymentMethod,
+    setAmountPaid,
+    confirmStoreOrder,
     clearCart,
   } = useCartStore();
 
   const currentUser = useUserStore(s => s.currentUser);
   const currentTurn = useUserStore(s => s.currentTurn);
-  const recordSale = useUserStore(s => s.recordSale);
-
-  const [showCheckout, setShowCheckout] = useState(false);
 
   const subtotal = getSubtotal();
   const total = getTotal();
   const itemCount = getItemCount();
   const discountAmount = subtotal * (discount / 100);
+  const change = getChange();
 
   const handleCompleteSale = async () => {
     if (items.length === 0) {
       Alert.alert('Carrito vacío', 'Agregá productos antes de cobrar');
+      return;
+    }
+
+    if (!paymentMethod) {
+      Alert.alert('Forma de pago', 'Efectivo o Transferencia');
+      return;
+    }
+
+    if (paymentMethod === 'efectivo' && amountPaid < total) {
+      Alert.alert('Monto insuficiente', `El monto ingresado ($${amountPaid}) es menor al total ($${total})`);
       return;
     }
 
@@ -54,7 +69,7 @@ export default function CartScreen() {
 
     Alert.alert(
       '✅ Venta Completada',
-      `Total: ${formatCurrency(total)}\n🏪 Local`,
+      `Total: ${formatCurrency(total)}\n${paymentMethod === 'efectivo' ? '💵 Efectivo' : '🏦 Transferencia'}\n${paymentMethod === 'efectivo' && amountPaid > total ? `Vuelto: ${formatCurrency(change)}` : ''}`,
       [
         {
           text: '📱 Enviar por WhatsApp',
@@ -64,7 +79,7 @@ export default function CartScreen() {
           },
         },
         {
-          text: '🧾 Solo cobrar',
+          text: '🧾 Finalizar',
           onPress: finalizeSale,
         },
       ]
@@ -72,11 +87,7 @@ export default function CartScreen() {
   };
 
   const finalizeSale = () => {
-    if (currentTurn) {
-      recordSale(total, itemCount, 'store');
-    }
-    clearCart();
-    setShowCheckout(false);
+    confirmStoreOrder();
     Alert.alert('🎉 Éxito', 'Venta registrada correctamente');
   };
 
@@ -162,6 +173,72 @@ export default function CartScreen() {
             />
           </View>
 
+          {/* Payment Method */}
+          <View style={styles.paymentSection}>
+            <Text style={[styles.paymentLabel, { color: colors.textPrimary }]}>💰 Forma de Pago</Text>
+            <View style={styles.paymentOptions}>
+              <TouchableOpacity
+                style={[
+                  styles.paymentOption,
+                  { borderColor: colors.border },
+                  paymentMethod === 'efectivo' && { borderColor: colors.primary, backgroundColor: `${colors.primary}15` },
+                ]}
+                onPress={() => setPaymentMethod('efectivo')}
+              >
+                <Text style={styles.paymentEmoji}>💵</Text>
+                <Text style={[
+                  styles.paymentText,
+                  { color: colors.textPrimary },
+                  paymentMethod === 'efectivo' && { color: colors.primary, fontWeight: 'bold' },
+                ]}>
+                  Efectivo
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.paymentOption,
+                  { borderColor: colors.border },
+                  paymentMethod === 'transferencia' && { borderColor: colors.primary, backgroundColor: `${colors.primary}15` },
+                ]}
+                onPress={() => setPaymentMethod('transferencia')}
+              >
+                <Text style={styles.paymentEmoji}>🏦</Text>
+                <Text style={[
+                  styles.paymentText,
+                  { color: colors.textPrimary },
+                  paymentMethod === 'transferencia' && { color: colors.primary, fontWeight: 'bold' },
+                ]}>
+                  Transferencia
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Amount Paid (only for cash) */}
+          {paymentMethod === 'efectivo' && (
+            <View style={styles.amountSection}>
+              <Text style={[styles.amountLabel, { color: colors.textSecondary }]}>💵 Monto entregado</Text>
+              <TextInput
+                style={[styles.amountInput, { borderColor: colors.border, color: colors.textPrimary }]}
+                value={amountPaid.toString()}
+                onChangeText={(text) => setAmountPaid(parseInt(text) || 0)}
+                keyboardType="numeric"
+                placeholder="0"
+                placeholderTextColor={colors.placeholder}
+              />
+              
+              {amountPaid > 0 && (
+                <View style={[styles.changeBox, { backgroundColor: `${Colors.exito}15`, borderColor: `${Colors.exito}30` }]}>
+                  <Text style={[styles.changeLabel, { color: Colors.exito }]}>💵 Vuelto:</Text>
+                  <Text style={[styles.changeValue, { color: Colors.exito }]}>
+                    {formatCurrency(change)}
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
+
           {/* Notes */}
           <View style={styles.notesSection}>
             <Text style={[styles.notesLabel, { color: colors.textSecondary }]}>📝 Notas</Text>
@@ -178,7 +255,7 @@ export default function CartScreen() {
           {/* Action Buttons */}
           <View style={styles.actions}>
             <Button
-              title="🧾 Cobrar"
+              title="🧾 Registrar Venta"
               onPress={handleCompleteSale}
               icon="💰"
               style={styles.checkoutButton}
@@ -293,6 +370,68 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.sm,
     textAlign: 'center',
     fontSize: 14,
+  },
+  paymentSection: {
+    marginTop: Spacing.lg,
+  },
+  paymentLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: Spacing.sm,
+  },
+  paymentOptions: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  paymentOption: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 2,
+    gap: Spacing.sm,
+  },
+  paymentEmoji: {
+    fontSize: 24,
+  },
+  paymentText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  amountSection: {
+    marginTop: Spacing.md,
+  },
+  amountLabel: {
+    fontSize: 14,
+    marginBottom: Spacing.sm,
+  },
+  amountInput: {
+    height: 50,
+    borderWidth: 2,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.md,
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  changeBox: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: Spacing.sm,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+  },
+  changeLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  changeValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
   },
   notesSection: {
     marginTop: Spacing.md,

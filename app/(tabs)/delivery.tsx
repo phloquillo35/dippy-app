@@ -9,10 +9,11 @@ import { useUserStore } from '@/store/userStore';
 import { Button } from '@/components/Button';
 import { CartItemCard } from '@/components/Card';
 import { formatCurrency } from '@/utils/uuid';
+import { PaymentMethod } from '@/types';
 
 const { width } = Dimensions.get('window');
 
-type DeliveryView = 'dashboard' | 'menu' | 'whatsapp' | 'checkout' | 'orders' | 'order-detail';
+type DeliveryView = 'dashboard' | 'menu' | 'whatsapp' | 'checkout' | 'orders' | 'order-detail' | 'payment';
 
 const DELIVERY_CATEGORIES = [
   { key: 'all', label: '📋 Todos', emoji: '📋' },
@@ -29,6 +30,8 @@ export default function DeliveryScreen() {
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [whatsappMessage, setWhatsappMessage] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
+  const [amountPaid, setAmountPaid] = useState<number>(0);
 
   const deliveryCart = useDeliveryCartStore();
   const orderStore = useOrderStore();
@@ -509,6 +512,25 @@ export default function DeliveryScreen() {
     const order = orderStore.getOrderById(selectedOrder);
     if (!order) return null;
 
+    const orderChange = amountPaid - order.total;
+
+    const handlePayment = () => {
+      if (!paymentMethod) {
+        Alert.alert('Seleccioná método', 'Efectivo o Transferencia');
+        return;
+      }
+      if (paymentMethod === 'efectivo' && amountPaid < order.total) {
+        Alert.alert('Monto insuficiente', `El monto ($${amountPaid}) es menor al total ($${order.total})`);
+        return;
+      }
+      
+      orderStore.markAsPaid(order.id, paymentMethod, amountPaid);
+      Alert.alert('✅ Pago Registrado', `${paymentMethod === 'efectivo' ? '💵 Efectivo' : '🏦 Transferencia'}: ${formatCurrency(amountPaid)}`);
+      setPaymentMethod(null);
+      setAmountPaid(0);
+      setCurrentView('orders');
+    };
+
     return (
       <ScrollView style={styles.viewContainer} showsVerticalScrollIndicator={false}>
         <View style={styles.detailContainer}>
@@ -558,11 +580,111 @@ export default function DeliveryScreen() {
             </View>
           </View>
 
+          {/* Payment Status */}
+          <View style={[styles.detailCard, { backgroundColor: order.paymentReceived ? `${Colors.exito}15` : `${Colors.advertencia}15`, borderColor: order.paymentReceived ? `${Colors.exito}30` : `${Colors.advertencia}30` }]}>
+            <Text style={[styles.detailCardTitle, { color: order.paymentReceived ? Colors.exito : Colors.advertencia }]}>
+              {order.paymentReceived ? '✅ Pago Registrado' : '⏳ Pago Pendiente'}
+            </Text>
+            {order.paymentReceived ? (
+              <>
+                <Text style={[styles.detailText, { color: colors.textSecondary }]}>
+                  Método: {order.paymentMethod === 'efectivo' ? '💵 Efectivo' : '🏦 Transferencia'}
+                </Text>
+                <Text style={[styles.detailText, { color: colors.textSecondary }]}>
+                  Monto: {formatCurrency(order.amountPaid || 0)}
+                </Text>
+                {order.paymentMethod === 'efectivo' && order.amountPaid && order.amountPaid > order.total && (
+                  <Text style={[styles.detailText, { color: Colors.exito }]}>
+                    Vuelto: {formatCurrency(order.amountPaid - order.total)}
+                  </Text>
+                )}
+              </>
+            ) : (
+              <Text style={[styles.detailText, { color: colors.textSecondary }]}>
+                Registrar pago antes o después de entregar
+              </Text>
+            )}
+          </View>
+
           {/* Notes */}
           {order.notes && (
             <View style={[styles.detailCard, { backgroundColor: colors.card, ...Shadows.sm }]}>
               <Text style={[styles.detailCardTitle, { color: colors.textPrimary }]}>📝 Notas</Text>
               <Text style={[styles.detailText, { color: colors.textSecondary }]}>{order.notes}</Text>
+            </View>
+          )}
+
+          {/* Payment Section */}
+          {!order.paymentReceived && (
+            <View style={[styles.detailCard, { backgroundColor: colors.card, ...Shadows.sm }]}>
+              <Text style={[styles.detailCardTitle, { color: colors.textPrimary }]}>💰 Registrar Pago</Text>
+              
+              <View style={styles.paymentOptions}>
+                <TouchableOpacity
+                  style={[
+                    styles.paymentOption,
+                    { borderColor: colors.border },
+                    paymentMethod === 'efectivo' && { borderColor: colors.primary, backgroundColor: `${colors.primary}15` },
+                  ]}
+                  onPress={() => setPaymentMethod('efectivo')}
+                >
+                  <Text style={styles.paymentEmoji}>💵</Text>
+                  <Text style={[
+                    styles.paymentText,
+                    { color: colors.textPrimary },
+                    paymentMethod === 'efectivo' && { color: colors.primary, fontWeight: 'bold' },
+                  ]}>
+                    Efectivo
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.paymentOption,
+                    { borderColor: colors.border },
+                    paymentMethod === 'transferencia' && { borderColor: colors.primary, backgroundColor: `${colors.primary}15` },
+                  ]}
+                  onPress={() => setPaymentMethod('transferencia')}
+                >
+                  <Text style={styles.paymentEmoji}>🏦</Text>
+                  <Text style={[
+                    styles.paymentText,
+                    { color: colors.textPrimary },
+                    paymentMethod === 'transferencia' && { color: colors.primary, fontWeight: 'bold' },
+                  ]}>
+                    Transferencia
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {paymentMethod === 'efectivo' && (
+                <View style={styles.amountSection}>
+                  <Text style={[styles.amountLabel, { color: colors.textSecondary }]}>💵 Monto entregado</Text>
+                  <TextInput
+                    style={[styles.amountInput, { borderColor: colors.border, color: colors.textPrimary }]}
+                    value={amountPaid.toString()}
+                    onChangeText={(text) => setAmountPaid(parseInt(text) || 0)}
+                    keyboardType="numeric"
+                    placeholder="0"
+                    placeholderTextColor={colors.placeholder}
+                  />
+                  
+                  {amountPaid > 0 && (
+                    <View style={[styles.changeBox, { backgroundColor: `${Colors.exito}15`, borderColor: `${Colors.exito}30` }]}>
+                      <Text style={[styles.changeLabel, { color: Colors.exito }]}>💵 Vuelto:</Text>
+                      <Text style={[styles.changeValue, { color: Colors.exito }]}>
+                        {formatCurrency(orderChange > 0 ? orderChange : 0)}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              )}
+
+              <Button
+                title="✅ Registrar Pago"
+                onPress={handlePayment}
+                style={styles.paymentButton}
+              />
             </View>
           )}
 
@@ -576,6 +698,19 @@ export default function DeliveryScreen() {
                      '📍 Marcar como Entregado'}
               onPress={() => {
                 handleAdvanceStatus(order.id, order.status);
+                setCurrentView('orders');
+              }}
+              style={styles.detailAdvanceButton}
+            />
+          )}
+
+          {/* Mark as Sold */}
+          {order.status === 'delivered' && order.paymentReceived && (
+            <Button
+              title="💰 Marcar como Vendido"
+              onPress={() => {
+                orderStore.markAsSold(order.id);
+                Alert.alert('✅ Vendido', 'Pedido marcado como vendido');
                 setCurrentView('orders');
               }}
               style={styles.detailAdvanceButton}
@@ -1085,6 +1220,64 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   detailAdvanceButton: {
+    marginTop: Spacing.md,
+  },
+  paymentOptions: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+  paymentOption: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 2,
+    gap: Spacing.sm,
+  },
+  paymentEmoji: {
+    fontSize: 24,
+  },
+  paymentText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  amountSection: {
+    marginTop: Spacing.md,
+  },
+  amountLabel: {
+    fontSize: 14,
+    marginBottom: Spacing.sm,
+  },
+  amountInput: {
+    height: 50,
+    borderWidth: 2,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.md,
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  changeBox: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: Spacing.sm,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+  },
+  changeLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  changeValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  paymentButton: {
     marginTop: Spacing.md,
   },
 });

@@ -1,12 +1,15 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { CartItem, Product, ProductVariant } from '@/types';
+import { CartItem, Product, ProductVariant, PaymentMethod } from '@/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useUserStore } from './userStore';
 
 interface CartState {
   items: CartItem[];
   notes: string;
   discount: number;
+  paymentMethod: PaymentMethod | null;
+  amountPaid: number;
 
   // Actions
   addItem: (product: Product, variant?: ProductVariant, quantity?: number) => void;
@@ -15,11 +18,17 @@ interface CartState {
   clearCart: () => void;
   setNotes: (notes: string) => void;
   setDiscount: (discount: number) => void;
+  setPaymentMethod: (method: PaymentMethod) => void;
+  setAmountPaid: (amount: number) => void;
 
   // Computed
   getSubtotal: () => number;
   getTotal: () => number;
   getItemCount: () => number;
+  getChange: () => number;  // Vuelto = amountPaid - total
+
+  // Confirmar venta en tienda
+  confirmStoreOrder: () => boolean;
 }
 
 const generateItemId = (productId: string, variantId?: string) =>
@@ -31,6 +40,8 @@ export const useCartStore = create<CartState>()(
       items: [],
       notes: '',
       discount: 0,
+      paymentMethod: null,
+      amountPaid: 0,
 
       addItem: (product, variant, quantity = 1) => {
         const variantId = variant?.id;
@@ -92,12 +103,18 @@ export const useCartStore = create<CartState>()(
           items: [],
           notes: '',
           discount: 0,
+          paymentMethod: null,
+          amountPaid: 0,
         });
       },
 
       setNotes: (notes) => set({ notes }),
 
       setDiscount: (discount) => set({ discount: Math.max(0, Math.min(100, discount)) }),
+
+      setPaymentMethod: (method) => set({ paymentMethod: method }),
+
+      setAmountPaid: (amount) => set({ amountPaid: Math.max(0, amount) }),
 
       getSubtotal: () => get().items.reduce((sum, item) => sum + item.totalPrice, 0),
 
@@ -108,6 +125,29 @@ export const useCartStore = create<CartState>()(
       },
 
       getItemCount: () => get().items.reduce((sum, item) => sum + item.quantity, 0),
+
+      getChange: () => {
+        const amountPaid = get().amountPaid;
+        const total = get().getTotal();
+        return Math.max(0, amountPaid - total);
+      },
+
+      confirmStoreOrder: () => {
+        const state = get();
+        if (state.items.length === 0) return false;
+
+        const userStore = useUserStore.getState();
+        const currentTurn = userStore.currentTurn;
+        
+        if (currentTurn) {
+          const total = state.getTotal();
+          const itemCount = state.getItemCount();
+          userStore.recordSale(total, itemCount, 'store');
+        }
+
+        get().clearCart();
+        return true;
+      },
     }),
     {
       name: 'dippy-store-cart',
@@ -116,6 +156,8 @@ export const useCartStore = create<CartState>()(
         items: state.items,
         notes: state.notes,
         discount: state.discount,
+        paymentMethod: state.paymentMethod,
+        amountPaid: state.amountPaid,
       }),
     }
   )

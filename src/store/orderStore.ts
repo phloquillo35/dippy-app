@@ -18,6 +18,7 @@ export interface DeliveryOrder {
   total: number;
   status: OrderStatus;
   paymentMethod?: PaymentMethod;
+  amountPaid?: number;           // Monto que entrega el cliente
   paymentReceived: boolean;
   source: 'menu' | 'whatsapp' | 'phone' | 'presencial';
   notes?: string;
@@ -27,6 +28,7 @@ export interface DeliveryOrder {
   confirmedAt?: string;
   deliveredAt?: string;
   soldAt?: string;
+  paidAt?: string;               // Cuándo se registró el pago
 }
 
 interface OrderState {
@@ -53,7 +55,7 @@ interface OrderState {
   updateOrderStatus: (orderId: string, status: OrderStatus) => void;
 
   // Registrar pago
-  markAsPaid: (orderId: string, method: PaymentMethod) => void;
+  markAsPaid: (orderId: string, method: PaymentMethod, amount?: number) => void;
 
   // Marcar como entregado
   markAsDelivered: (orderId: string) => void;
@@ -220,11 +222,28 @@ export const useOrderStore = create<OrderState>()(
         }));
       },
 
-      markAsPaid: (orderId, method) => {
+      markAsPaid: (orderId, method, amount) => {
+        const now = new Date().toISOString();
         set(state => ({
           orders: state.orders.map(o =>
-            o.id === orderId ? { ...o, paymentMethod: method, paymentReceived: true, updatedAt: new Date().toISOString() } : o
+            o.id === orderId ? { 
+              ...o, 
+              paymentMethod: method, 
+              paymentReceived: true, 
+              amountPaid: amount,
+              paidAt: now,
+              updatedAt: now 
+            } : o
           ),
+          currentOrder: state.currentOrder?.id === orderId
+            ? { 
+                ...state.currentOrder, 
+                paymentMethod: method, 
+                paymentReceived: true,
+                amountPaid: amount,
+                paidAt: now,
+              }
+            : state.currentOrder,
         }));
       },
 

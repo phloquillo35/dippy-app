@@ -49,6 +49,13 @@ export default function MetricsScreen() {
   const totalOrdersStore = turnsHistory.reduce((sum, turn) => sum + turn.totalOrders, 0);
   const averageTicket = totalOrdersStore > 0 ? totalSalesStore / totalOrdersStore : 0;
 
+  // Payment metrics
+  const paidOrders = orders.filter(o => o.paymentReceived);
+  const cashOrders = paidOrders.filter(o => o.paymentMethod === 'efectivo');
+  const transferOrders = paidOrders.filter(o => o.paymentMethod === 'transferencia');
+  const totalCash = cashOrders.reduce((sum, o) => sum + (o.amountPaid || 0), 0);
+  const totalTransfer = transferOrders.reduce((sum, o) => sum + (o.amountPaid || 0), 0);
+
   const lowStockProducts = products.filter(p => p.stock <= p.minStock);
   const topProducts = products.slice(0, 5);
 
@@ -64,6 +71,11 @@ export default function MetricsScreen() {
     { emoji: '🛵', label: 'Pedidos Delivery', value: deliveryOrders.length.toString(), color: Colors.celesteBandera },
     { emoji: '👥', label: 'Turnos Totales', value: turnsHistory.length.toString(), color: Colors.amarilloAcento },
     { emoji: '📦', label: 'Productos Activos', value: products.length.toString(), color: Colors.exito },
+  ];
+
+  const paymentStats = [
+    { emoji: '💵', label: 'Efectivo', value: formatCurrency(totalCash), count: cashOrders.length.toString(), color: Colors.exito },
+    { emoji: '🏦', label: 'Transferencia', value: formatCurrency(totalTransfer), count: transferOrders.length.toString(), color: colors.primary },
   ];
 
   return (
@@ -111,6 +123,27 @@ export default function MetricsScreen() {
               <View style={styles.businessInfo}>
                 <Text style={[styles.businessValue, { color: stat.color }]}>{stat.value}</Text>
                 <Text style={[styles.businessLabel, { color: colors.textSecondary }]}>{stat.label}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      </View>
+
+      {/* Payment Stats */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>💳 Métodos de Pago</Text>
+        <View style={styles.businessGrid}>
+          {paymentStats.map((stat, index) => (
+            <View
+              key={index}
+              style={[styles.businessCard, { backgroundColor: colors.card, ...Shadows.sm }]}
+            >
+              <Text style={styles.businessEmoji}>{stat.emoji}</Text>
+              <View style={styles.businessInfo}>
+                <Text style={[styles.businessValue, { color: stat.color }]}>{stat.value}</Text>
+                <Text style={[styles.businessLabel, { color: colors.textSecondary }]}>
+                  {stat.label} ({stat.count} pedidos)
+                </Text>
               </View>
             </View>
           ))}
