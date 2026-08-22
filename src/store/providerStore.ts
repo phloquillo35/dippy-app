@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { Provider, ProviderProduct, ProductCategory } from '@/types';
+import { Provider, ProviderProduct, ProductCategory, PaymentSupplier, PaymentMethod } from '@/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { generateId } from '@/utils/uuid';
 
@@ -19,6 +19,12 @@ interface ProviderState {
   updateProviderProduct: (id: string, data: Partial<ProviderProduct>) => void;
   deleteProviderProduct: (id: string) => void;
   getProviderProducts: (providerId: string) => ProviderProduct[];
+
+  // Payment management
+  addPayment: (providerId: string, amount: number, method: PaymentMethod, userId: string, reason?: string) => PaymentSupplier;
+  getPaymentsByProvider: (providerId: string) => PaymentSupplier[];
+  getTotalPaidToProvider: (providerId: string) => number;
+  getTotalPayments: () => number;
 }
 
 const DEFAULT_PROVIDERS: Provider[] = [
@@ -159,6 +165,51 @@ export const useProviderStore = create<ProviderState>()(
 
       getProviderProducts: (providerId) =>
         get().providerProducts.filter(p => p.providerId === providerId),
+
+      // Payment management
+      addPayment: (providerId, amount, method, userId, reason) => {
+        const payment: PaymentSupplier = {
+          id: generateId(),
+          providerId,
+          amount,
+          date: new Date().toISOString(),
+          method,
+          userId,
+          reason,
+        };
+
+        set(state => ({
+          providers: state.providers.map(p => 
+            p.id === providerId 
+              ? { ...p, payments: [...(p.payments || []), payment] }
+              : p
+          ),
+        }));
+
+        return payment;
+      },
+
+      getPaymentsByProvider: (providerId) => {
+        const provider = get().providers.find(p => p.id === providerId);
+        return provider?.payments || [];
+      },
+
+      getTotalPaidToProvider: (providerId) => {
+        const provider = get().providers.find(p => p.id === providerId);
+        if (!provider?.payments) return 0;
+        return provider.payments.reduce((sum, p) => sum + p.amount, 0);
+      },
+
+      getTotalPayments: () => {
+        const providers = get().providers;
+        let total = 0;
+        providers.forEach(p => {
+          if (p.payments) {
+            total += p.payments.reduce((sum, pay) => sum + pay.amount, 0);
+          }
+        });
+        return total;
+      },
     }),
     {
       name: 'dippy-providers',

@@ -27,9 +27,12 @@ export interface User {
   email?: string;
   role: UserRole;
   avatar?: string;
+  pin?: string;              // PIN numérico de 4 dígitos
   createdAt: string;
   lastLoginAt?: string;
   isActive: boolean;
+  pinAttempts?: number;      // Intentos fallidos de PIN
+  isLocked?: boolean;        // Bloqueado por intentos fallidos
 }
 
 // Turno de trabajo
@@ -150,6 +153,18 @@ export interface Provider {
   notes?: string;
   createdAt: string;
   updatedAt: string;
+  payments?: PaymentSupplier[];  // Historial de pagos
+}
+
+// Pago a proveedor
+export interface PaymentSupplier {
+  id: string;
+  providerId: string;
+  amount: number;             // Monto pagado
+  date: string;               // Fecha del pago
+  method: PaymentMethod;      // Efectivo/Transferencia/Check
+  reason?: string;            // Concepto o descripción del pago
+  userId: string;             // Quién registró el pago
 }
 
 // Producto del proveedor (catálogo)

@@ -6,6 +6,7 @@ import { useColors } from '@/theme/ThemeProvider';
 import { useUserStore } from '@/store/userStore';
 import { useOrderStore } from '@/store/orderStore';
 import { useProductStore } from '@/store/productStore';
+import { useProviderStore } from '@/store/providerStore';
 import { formatCurrency } from '@/utils/uuid';
 
 const { width } = Dimensions.get('window');
@@ -17,6 +18,8 @@ export default function MetricsScreen() {
   const turnsHistory = useUserStore(s => s.getAllTurns());
   const orders = useOrderStore(s => s.orders);
   const products = useProductStore(s => s.getProducts());
+  const providers = useProviderStore(s => s.getProviders());
+  const getTotalPayments = useProviderStore(s => s.getTotalPayments);
 
   // Redirect if not admin
   useEffect(() => {
@@ -56,6 +59,9 @@ export default function MetricsScreen() {
   const totalCash = cashOrders.reduce((sum, o) => sum + (o.amountPaid || 0), 0);
   const totalTransfer = transferOrders.reduce((sum, o) => sum + (o.amountPaid || 0), 0);
 
+  // Supplier payments
+  const totalSupplierPayments = getTotalPayments();
+
   const lowStockProducts = products.filter(p => p.stock <= p.minStock);
   const topProducts = products.slice(0, 5);
 
@@ -63,6 +69,7 @@ export default function MetricsScreen() {
     { emoji: '💰', label: 'Ventas Totales', value: formatCurrency(totalSalesStore), color: Colors.exito },
     { emoji: '🛒', label: 'Pedidos Totales', value: totalOrdersStore.toString(), color: colors.primary },
     { emoji: '📊', label: 'Ticket Promedio', value: formatCurrency(averageTicket), color: Colors.amarilloAcento },
+    { emoji: '💸', label: 'Pagos Proveedores', value: formatCurrency(totalSupplierPayments), color: Colors.error },
     { emoji: '⚠️', label: 'Stock Bajo', value: lowStockProducts.length.toString(), color: lowStockProducts.length > 0 ? Colors.error : Colors.exito },
   ];
 
@@ -147,6 +154,38 @@ export default function MetricsScreen() {
               </View>
             </View>
           ))}
+        </View>
+      </View>
+
+      {/* Supplier Payments */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>🏭 Pagos a Proveedores</Text>
+        <View style={[styles.turnsCard, { backgroundColor: colors.card, ...Shadows.sm }]}>
+          {providers.length === 0 ? (
+            <Text style={[styles.turnName, { color: colors.textSecondary, textAlign: 'center', padding: Spacing.md }]}>
+              No hay proveedores registrados
+            </Text>
+          ) : (
+            providers.slice(0, 5).map((provider) => {
+              const totalPaid = provider.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
+              const paymentCount = provider.payments?.length || 0;
+              return (
+                <View key={provider.id} style={styles.turnItem}>
+                  <View style={styles.turnInfo}>
+                    <Text style={[styles.turnName, { color: colors.textPrimary }]}>{provider.name}</Text>
+                    <Text style={[styles.turnShift, { color: colors.textSecondary }]}>
+                      {paymentCount} pago{paymentCount !== 1 ? 's' : ''} registrado{paymentCount !== 1 ? 's' : ''}
+                    </Text>
+                  </View>
+                  <View style={styles.turnStats}>
+                    <Text style={[styles.turnSales, { color: Colors.error }]}>
+                      -{formatCurrency(totalPaid)}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })
+          )}
         </View>
       </View>
 

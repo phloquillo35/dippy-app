@@ -12,8 +12,15 @@ interface UserState {
   
   // Auth
   login: (email: string, password: string) => Promise<User | null>;
+  loginWithPin: (userId: string, pin: string) => Promise<User | null>;
   logout: () => void;
   register: (userData: Omit<User, 'id' | 'createdAt' | 'lastLoginAt'>) => User;
+  
+  // PIN management
+  setPin: (userId: string, pin: string) => void;
+  verifyPin: (userId: string, pin: string) => boolean;
+  resetPinAttempts: (userId: string) => void;
+  isProfileActive: (userId: string) => boolean;
   
   // Role helpers
   isAdmin: () => boolean;
@@ -98,6 +105,61 @@ export const useUserStore = create<UserState>()(
         return null;
       },
 
+      loginWithPin: async (userId, pin) => {
+        const user = get().users.find(u => u.id === userId && u.isActive);
+        if (!user) return null;
+        
+        // Si el usuario tiene PIN configurado, verificarlo
+        if (user.pin) {
+          // Verificar si está bloqueado
+          if (user.isLocked) {
+            throw new Error('Cuenta bloqueada. Contacte al administrador.');
+          }
+          
+          // Verificar PIN
+          if (user.pin !== pin) {
+            // Incrementar intentos fallidos
+            const newAttempts = (user.pinAttempts || 0) + 1;
+            const isLocked = newAttempts >= 3;
+            
+            set(state => ({
+              users: state.users.map(u => 
+                u.id === userId ? { ...u, pinAttempts: newAttempts, isLocked } : u
+              ),
+            }));
+            
+            if (isLocked) {
+              throw new Error('Cuenta bloqueada por 3 intentos fallidos. Contacte al administrador.');
+            }
+            
+            throw new Error(`PIN incorrecto. Intentos restantes: ${3 - newAttempts}`);
+          }
+          
+          // PIN correcto, resetear intentos
+          const updatedUser = { 
+            ...user, 
+            lastLoginAt: new Date().toISOString(),
+            pinAttempts: 0,
+            isLocked: false
+          };
+          
+          set(state => ({
+            currentUser: updatedUser,
+            users: state.users.map(u => u.id === userId ? updatedUser : u),
+          }));
+          
+          return updatedUser;
+        }
+        
+        // Si no tiene PIN configurado, permitir login sin PIN (admin inicial)
+        const updatedUser = { ...user, lastLoginAt: new Date().toISOString() };
+        set(state => ({
+          currentUser: updatedUser,
+          users: state.users.map(u => u.id === userId ? updatedUser : u),
+        }));
+        return updatedUser;
+      },
+
       logout: () => {
         // Si hay turno activo, cerrarlo automáticamente
         if (get().currentTurn) {
@@ -125,6 +187,41 @@ export const useUserStore = create<UserState>()(
         };
         set(state => ({ users: [...state.users, newUser] }));
         return newUser;
+      },
+
+      setPin: (userId, pin) => {
+        // Validar que el PIN sea de 4 dígitos
+        if (!/^\d{4}$/.test(pin)) {
+          throw new Error('El PIN debe ser de 4 dígitos numéricos');
+        }
+        
+        set(state => ({
+          users: state.users.map(u => 
+            u.id === userId ? { ...u, pin } : u
+          ),
+          currentUser: state.currentUser?.id === userId 
+            ? { ...state.currentUser, pin } 
+            : state.currentUser,
+        }));
+      },
+
+      verifyPin: (userId, pin) => {
+        const user = get().users.find(u => u.id === userId);
+        if (!user) return false;
+        return user.pin === pin;
+      },
+
+      resetPinAttempts: (userId) => {
+        set(state => ({
+          users: state.users.map(u => 
+            u.id === userId ? { ...u, pinAttempts: 0, isLocked: false } : u
+          ),
+        }));
+      },
+
+      isProfileActive: (userId) => {
+        const user = get().users.find(u => u.id === userId);
+        return user?.isActive ?? false;
       },
 
       startTurn: (shift) => {
