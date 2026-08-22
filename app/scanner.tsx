@@ -15,7 +15,6 @@ export default function ScannerScreen() {
   const colors = useColors();
   const getProductByBarcode = useProductStore(s => s.getProductByBarcode);
   const addItem = useCartStore(s => s.addItem);
-  const setChannel = useCartStore(s => s.setChannel);
 
   const [scannedProduct, setScannedProduct] = useState<Product | null>(null);
   const [selectedWeight, setSelectedWeight] = useState<WeightOption | undefined>(undefined);
@@ -60,7 +59,6 @@ export default function ScannerScreen() {
     if (!scannedProduct) return;
 
     addItem(scannedProduct, undefined, quantity);
-    setChannel(scannedProduct.salesChannels.includes('delivery') ? 'delivery' : 'store');
 
     Alert.alert(
       '✅ Agregado al carrito',

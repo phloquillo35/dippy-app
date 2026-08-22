@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, ScrollView, Alert, TextInput } from 'react-native';
-import { router } from 'expo-router';
+import { View, Text, StyleSheet, FlatList, Alert, TextInput } from 'react-native';
 import { Colors, Spacing, BorderRadius, Shadows } from '@/theme';
-import { useColors, useShadow } from '@/theme/ThemeProvider';
+import { useColors } from '@/theme/ThemeProvider';
 import { useCartStore } from '@/store/cartStore';
 import { useUserStore } from '@/store/userStore';
 import { CartItemCard } from '@/components/Card';
@@ -14,14 +13,8 @@ export default function CartScreen() {
   const colors = useColors();
   const {
     items,
-    channel,
-    customerName,
-    customerPhone,
-    customerAddress,
     notes,
     discount,
-    setChannel,
-    setCustomerInfo,
     setNotes,
     setDiscount,
     removeItem,
@@ -55,22 +48,18 @@ export default function CartScreen() {
       subtotal,
       discount: discountAmount,
       total,
-      channel,
-      customerName,
-      customerPhone,
-      customerAddress,
-      notes,
+      channel: 'store' as const,
       userName: currentUser?.name,
     };
 
     Alert.alert(
       '✅ Venta Completada',
-      `Total: ${formatCurrency(total)}\n${channel === 'delivery' ? '🛵 Delivery' : '🏪 Local'}`,
+      `Total: ${formatCurrency(total)}\n🏪 Local`,
       [
         {
           text: '📱 Enviar por WhatsApp',
           onPress: async () => {
-            await sendReceiptWhatsApp(orderData, customerPhone);
+            await sendReceiptWhatsApp(orderData, undefined);
             finalizeSale();
           },
         },
@@ -84,7 +73,7 @@ export default function CartScreen() {
 
   const finalizeSale = () => {
     if (currentTurn) {
-      recordSale(total, itemCount, channel);
+      recordSale(total, itemCount, 'store');
     }
     clearCart();
     setShowCheckout(false);
@@ -93,22 +82,12 @@ export default function CartScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Channel Toggle */}
-      <View style={styles.channelToggle}>
-        <Button
-          title="🏪 Local"
-          variant={channel === 'store' ? 'primary' : 'outline'}
-          size="sm"
-          onPress={() => setChannel('store')}
-          style={styles.channelButton}
-        />
-        <Button
-          title="🛵 Delivery"
-          variant={channel === 'delivery' ? 'primary' : 'outline'}
-          size="sm"
-          onPress={() => setChannel('delivery')}
-          style={styles.channelButton}
-        />
+      {/* Header */}
+      <View style={[styles.header, { backgroundColor: colors.card, ...Shadows.sm }]}>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>🛒 Carrito de Tienda</Text>
+        <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
+          {itemCount > 0 ? `${itemCount} items en tu carrito` : 'Agregá productos desde la pestaña Productos'}
+        </Text>
       </View>
 
       {/* Cart Items */}
@@ -137,14 +116,8 @@ export default function CartScreen() {
               Tu carrito está vacío
             </Text>
             <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-              Escaneá un producto o agregá uno manualmente
+              Agregá productos desde la pestaña Productos
             </Text>
-            <Button
-              title="📱 Escanear Código"
-              onPress={() => router.push('/scanner')}
-              icon="📱"
-              style={styles.scanButton}
-            />
           </View>
         }
       />
@@ -188,35 +161,6 @@ export default function CartScreen() {
               maxLength={3}
             />
           </View>
-
-          {/* Customer Info for Delivery */}
-          {channel === 'delivery' && (
-            <View style={styles.customerSection}>
-              <Text style={[styles.customerTitle, { color: colors.textPrimary }]}>🧑 Datos del Cliente</Text>
-              <TextInput
-                style={[styles.input, { borderColor: colors.border, color: colors.textPrimary }]}
-                placeholder="Nombre"
-                placeholderTextColor={colors.placeholder}
-                value={customerName}
-                onChangeText={(text) => setCustomerInfo({ name: text })}
-              />
-              <TextInput
-                style={[styles.input, { borderColor: colors.border, color: colors.textPrimary }]}
-                placeholder="Teléfono (ej: 1155551234)"
-                placeholderTextColor={colors.placeholder}
-                value={customerPhone}
-                onChangeText={(text) => setCustomerInfo({ phone: text })}
-                keyboardType="phone-pad"
-              />
-              <TextInput
-                style={[styles.input, { borderColor: colors.border, color: colors.textPrimary }]}
-                placeholder="Dirección completa"
-                placeholderTextColor={colors.placeholder}
-                value={customerAddress}
-                onChangeText={(text) => setCustomerInfo({ address: text })}
-              />
-            </View>
-          )}
 
           {/* Notes */}
           <View style={styles.notesSection}>
@@ -269,13 +213,18 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  channelToggle: {
-    flexDirection: 'row',
+  header: {
     padding: Spacing.md,
-    gap: Spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
   },
-  channelButton: {
-    flex: 1,
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    marginTop: 2,
   },
   itemsList: {
     padding: Spacing.md,
@@ -296,9 +245,6 @@ const styles = StyleSheet.create({
   emptySubtitle: {
     fontSize: 14,
     marginBottom: Spacing.lg,
-  },
-  scanButton: {
-    marginTop: Spacing.md,
   },
   summary: {
     padding: Spacing.lg,
@@ -347,14 +293,6 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.sm,
     textAlign: 'center',
     fontSize: 14,
-  },
-  customerSection: {
-    marginTop: Spacing.md,
-  },
-  customerTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: Spacing.sm,
   },
   notesSection: {
     marginTop: Spacing.md,

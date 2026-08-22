@@ -66,6 +66,13 @@ export default function RootLayout() {
                 presentation: 'modal',
               }}
             />
+            <Stack.Screen
+              name="metrics"
+              options={{
+                title: '📊 Métricas del Negocio',
+                headerShown: false,
+              }}
+            />
 
           </Stack>
         </ThemeProvider>

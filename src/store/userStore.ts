@@ -15,6 +15,10 @@ interface UserState {
   logout: () => void;
   register: (userData: Omit<User, 'id' | 'createdAt' | 'lastLoginAt'>) => User;
   
+  // Role helpers
+  isAdmin: () => boolean;
+  canAccessMetrics: () => boolean;
+  
   // Turn management
   startTurn: (shift: TurnShift) => WorkTurn;
   endTurn: () => WorkTurn | null;
@@ -100,6 +104,16 @@ export const useUserStore = create<UserState>()(
           get().endTurn();
         }
         set({ currentUser: null });
+      },
+
+      isAdmin: () => {
+        const user = get().currentUser;
+        return user?.role === 'admin';
+      },
+
+      canAccessMetrics: () => {
+        const user = get().currentUser;
+        return user?.role === 'admin';
       },
 
       register: (userData) => {

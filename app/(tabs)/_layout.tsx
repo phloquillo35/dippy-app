@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
-import { Text, View, StyleSheet } from 'react-native';
-import { Colors, Spacing, BorderRadius } from '@/theme';
+import { Text, View, StyleSheet, Platform } from 'react-native';
+import { Colors } from '@/theme';
 import { useCartStore } from '@/store/cartStore';
 import { useUserStore } from '@/store/userStore';
 
@@ -12,7 +12,7 @@ const TabIcon = ({ emoji, label, badge }: { emoji: string; label: string; badge?
         <Text style={styles.badgeText}>{badge > 99 ? '99+' : badge}</Text>
       </View>
     )}
-    <Text style={styles.tabLabel}>{label}</Text>
+    <Text style={styles.tabLabel} numberOfLines={1}>{label}</Text>
   </View>
 );
 
@@ -26,18 +26,8 @@ export default function TabLayout() {
       screenOptions={{
         tabBarActiveTintColor: Colors.celesteInstitucional,
         tabBarInactiveTintColor: Colors.grisMedio,
-        tabBarStyle: {
-          backgroundColor: '#FFFFFF',
-          borderTopWidth: 1,
-          borderTopColor: '#E0E0E0',
-          height: 88,
-          paddingTop: 8,
-          paddingBottom: 28,
-        },
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '600',
-        },
+        tabBarStyle: styles.tabBar,
+        tabBarLabelStyle: styles.tabBarLabel,
         headerStyle: {
           backgroundColor: Colors.celesteInstitucional,
         },
@@ -61,7 +51,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: '🏠 Inicio',
+          title: 'Inicio',
           headerTitle: '🇦🇷 Dippy - Tu Negocio',
           tabBarIcon: ({ focused }) => (
             <TabIcon emoji="🏠" label="Inicio" />
@@ -71,7 +61,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="products"
         options={{
-          title: '📦 Productos',
+          title: 'Productos',
           headerTitle: '📦 Productos',
           tabBarIcon: ({ focused }) => (
             <TabIcon emoji="📦" label="Stock" />
@@ -81,7 +71,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="cart"
         options={{
-          title: '🛒 Carrito',
+          title: 'Carrito',
           headerTitle: '🛒 Carrito de Compras',
           tabBarIcon: ({ focused }) => (
             <TabIcon emoji="🛒" label="Carrito" badge={itemCount} />
@@ -91,7 +81,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="delivery"
         options={{
-          title: '🛵 Delivery',
+          title: 'Delivery',
           headerTitle: '🛵 Delivery',
           tabBarIcon: ({ focused }) => (
             <TabIcon emoji="🛵" label="Delivery" />
@@ -101,7 +91,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="users"
         options={{
-          title: '👥 Equipo',
+          title: 'Equipo',
           headerTitle: '👥 Equipo',
           tabBarIcon: ({ focused }) => (
             <TabIcon emoji="👥" label="Equipo" />
@@ -111,7 +101,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="providers"
         options={{
-          title: '🏢 Proveedores',
+          title: 'Proveed.',
           headerTitle: '🏢 Proveedores',
           tabBarIcon: ({ focused }) => (
             <TabIcon emoji="🏢" label="Proveed." />
@@ -123,13 +113,25 @@ export default function TabLayout() {
 }
 
 const styles = StyleSheet.create({
+  tabBar: {
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+    height: Platform.OS === 'ios' ? 88 : 64,
+    paddingTop: 8,
+    paddingBottom: Platform.OS === 'ios' ? 28 : 8,
+  },
+  tabBarLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
   tabIcon: {
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
   },
   tabEmoji: {
-    fontSize: 24,
+    fontSize: 22,
   },
   tabLabel: {
     fontSize: 10,

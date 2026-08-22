@@ -20,6 +20,7 @@ export default function HomeScreen() {
   const currentUser = useUserStore(s => s.currentUser);
   const currentTurn = useUserStore(s => s.currentTurn);
   const providers = useProviderStore(s => s.getProviders());
+  const isAdmin = useUserStore(s => s.isAdmin());
 
   const storeProducts = products.filter(p => p.salesChannels.includes('store'));
   const deliveryProducts = products.filter(p => p.salesChannels.includes('delivery'));
@@ -28,8 +29,13 @@ export default function HomeScreen() {
     { emoji: '📱', label: 'Escanear', action: () => router.push('/scanner'), color: colors.primary },
     { emoji: '➕', label: 'Producto', action: () => router.push('/products/add'), color: Colors.exito },
     { emoji: '🛒', label: 'Carrito', action: () => router.push('/(tabs)/cart'), color: Colors.amarilloAcento },
-    { emoji: '🛵', label: 'Delivery', action: () => router.push('/delivery/menu'), color: Colors.celesteBandera },
+    { emoji: '🛵', label: 'Delivery', action: () => router.push('/(tabs)/delivery'), color: Colors.celesteBandera },
   ];
+
+  // Add metrics action for admin only
+  if (isAdmin) {
+    quickActions.push({ emoji: '📊', label: 'Métricas', action: () => router.push('/metrics'), color: Colors.advertencia });
+  }
 
   const stats = [
     { emoji: '📦', label: 'Productos', value: products.length.toString(), color: colors.primary },
