@@ -2,8 +2,10 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { Order, OrderStatus, CartItem, PaymentMethod, BusinessType } from '@/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { generateId } from '@/utils/uuid';
+import { generateId, formatCurrency } from '@/utils/uuid';
 import { useProductStore } from './productStore';
+import { useCashStore } from './cashStore';
+import { useAuditStore } from './auditStore';
 
 interface DeliveryOrder extends Order {
   amountPaid?: number;
@@ -25,7 +27,8 @@ interface OrderState {
     notes: string,
     userName: string,
     source: 'menu' | 'whatsapp' | 'phone',
-    deliveryFee?: number
+    deliveryFee?: number,
+    discount?: number
   ) => DeliveryOrder | null;
 
   createStoreOrder: (
@@ -34,7 +37,8 @@ interface OrderState {
     notes: string,
     userName: string,
     paymentMethod: PaymentMethod,
-    total: number
+    total: number,
+    discountAmount?: number
   ) => DeliveryOrder | null;
 
   importFromWhatsApp: (
@@ -74,10 +78,12 @@ export const useOrderStore = create<OrderState>()(
         notes,
         userName,
         source,
-        deliveryFee = 500
+        deliveryFee = 500,
+        discount = 0
       ) => {
         const subtotal = items.reduce((sum, item) => sum + item.totalPrice, 0);
-        const total = subtotal + deliveryFee;
+        const discountAmount = subtotal * (discount / 100);
+        const total = subtotal - discountAmount + deliveryFee;
 
         const order: DeliveryOrder = {
           id: generateId(),
@@ -85,7 +91,7 @@ export const useOrderStore = create<OrderState>()(
           channel: 'delivery',
           items,
           subtotal,
-          discount: 0,
+          discount: discountAmount,
           tax: 0,
           total,
           paymentMethod: 'efectivo',
@@ -121,17 +127,25 @@ export const useOrderStore = create<OrderState>()(
           currentOrder: order,
         }));
 
+        useAuditStore.getState().log({
+          action: 'order_created',
+          userId: '',
+          userName,
+          businessId,
+          description: `Pedido #${order.id.slice(-6).toUpperCase()} creado (${items.length} items, ${formatCurrency(total)})`,
+        });
+
         return order;
       },
 
-      createStoreOrder: (businessId, items, notes, userName, paymentMethod, total) => {
+      createStoreOrder: (businessId, items, notes, userName, paymentMethod, total, discountAmount = 0) => {
         const order: DeliveryOrder = {
           id: generateId(),
           businessId,
           channel: 'store',
           items,
-          subtotal: total,
-          discount: 0,
+          subtotal: total + discountAmount,
+          discount: discountAmount,
           tax: 0,
           total,
           paymentMethod,
@@ -164,7 +178,7 @@ export const useOrderStore = create<OrderState>()(
 
         for (const line of lines) {
           const cleaned = line.trim().replace(/^[•\-*]\s*/, '');
-          const qtyMatch = cleaned.match(/^(\d+|x\d+)\s+(.+)/i);
+          const qtyMatch = cleaned.match(/^(?:x)?(\d+)\s*x?\s+(.+)/i);
           if (!qtyMatch) continue;
 
           const qty = parseInt(qtyMatch[1].replace('x', '')) || 1;
@@ -204,6 +218,7 @@ export const useOrderStore = create<OrderState>()(
       },
 
       updateOrderStatus: (orderId, status) => {
+        const previous = get().orders.find(o => o.id === orderId);
         set(state => ({
           orders: state.orders.map(o =>
             o.id === orderId
@@ -211,6 +226,16 @@ export const useOrderStore = create<OrderState>()(
               : o
           ),
         }));
+
+        if (previous && previous.status !== status) {
+          useAuditStore.getState().log({
+            action: 'order_status_changed',
+            userId: previous.userId,
+            userName: previous.userName,
+            businessId: previous.businessId,
+            description: `Pedido #${orderId.slice(-6).toUpperCase()}: ${previous.status} → ${status}`,
+          });
+        }
       },
 
       markAsPaid: (orderId, method, amount) => {
@@ -245,6 +270,9 @@ export const useOrderStore = create<OrderState>()(
       },
 
       markAsSold: (orderId) => {
+        const target = get().orders.find(o => o.id === orderId);
+        if (!target || target.status === 'sold' || target.status === 'cancelled') return;
+
         set(state => ({
           orders: state.orders.map(o =>
             o.id === orderId
@@ -257,11 +285,34 @@ export const useOrderStore = create<OrderState>()(
               : o
           ),
         }));
+
+        // Registrar el ingreso en la caja abierta del negocio (si hay)
+        const register = useCashStore.getState().getOpenRegister(target.businessId);
+        if (register) {
+          useCashStore.getState().addMovement(register.id, {
+            type: 'sale',
+            amount: target.total,
+            description: `Pedido #${orderId.slice(-6).toUpperCase()} vendido${target.customerName ? ` - ${target.customerName}` : ''}`,
+            paymentMethod: target.paymentMethod || 'efectivo',
+            orderId,
+            userId: target.userId,
+            userName: target.userName,
+          });
+        }
+
+        useAuditStore.getState().log({
+          action: 'sale',
+          userId: target.userId,
+          userName: target.userName,
+          businessId: target.businessId,
+          description: `Pedido #${orderId.slice(-6).toUpperCase()} vendido`,
+          metadata: { total: target.total },
+        });
       },
 
       cancelOrder: (orderId) => {
         const order = get().orders.find(o => o.id === orderId);
-        if (order) {
+        if (order && order.status !== 'cancelled') {
           order.items.forEach(item => {
             useProductStore.getState().updateStock(
               item.productId,
@@ -277,11 +328,21 @@ export const useOrderStore = create<OrderState>()(
 
         set(state => ({
           orders: state.orders.map(o =>
-            o.id === orderId
+            o.id === orderId && o.status !== 'cancelled'
               ? { ...o, status: 'cancelled' as OrderStatus, updatedAt: new Date().toISOString() }
               : o
           ),
         }));
+
+        if (order && order.status !== 'cancelled') {
+          useAuditStore.getState().log({
+            action: 'order_cancelled',
+            userId: order.userId,
+            userName: order.userName,
+            businessId: order.businessId,
+            description: `Pedido #${orderId.slice(-6).toUpperCase()} cancelado (stock restaurado)`,
+          });
+        }
       },
 
       getPendingOrders: (businessId) => {

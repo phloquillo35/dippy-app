@@ -88,13 +88,34 @@ src/
 
 ## Pendiente (al 25/08/2026)
 
-### 🟢 F23: Cierre
-- `npx tsc --noEmit` → 0 errores ✅ (verificado en macOS 25/08)
-- Commit + push de F17/F19
+### ✅ Auditoría completa (25/08/2026, sesión macOS)
+- **Suite de pruebas**: `npm test` (scripts/logic-test.ts con tsx) — **50/50 pasan**
+- `npx tsc --noEmit` → 0 errores · bundle web compila sin errores
 
-### Notas para próxima sesión
-- `(tabs)/` LEGACY aún tiene hex hardcodeados (residuales sin ruta activa) — eliminar carpeta o migrar si se reactiva
-- Dark mode parcial: los StyleSheet.create estáticos usan Colors.xxx (solo light); pasarlos a inline con useColors() si se quiere dark mode completo
+**Bugs reparados:**
+1. 🔴 CRÍTICO — `setCustomerInfo` del carrito delivery ignoraba los datos (mapeo name/phone/address ≠ customerName/...): los pedidos se guardaban sin cliente. Ahora mapea bien y el pedido lleva nombre/tel/dirección.
+2. Descuento del carrito delivery no llegaba a la orden (`createOrder` ahora recibe `discount`).
+3. Ventas delivery marcadas "Vendido" no registraban en Caja → ahora `markAsSold` registra el ingreso (idempotente).
+4. Sobreventa en carritos: `addItem` valida stock acumulado (retorna ok/capped/no_stock) + alertas en pantallas.
+5. `cancelOrder` duplicable (restauraba stock 2 veces) → guard.
+6. `Alert.prompt` (solo iOS) en login PIN → modal propio multiplataforma.
+7. Rutas muertas a `/(tabs)/` eliminado en products/[id], scanner, metrics + carpeta legacy borrada.
+8. Regex WhatsApp `importFromWhatsApp` no parseaba "2x producto".
+
+**Features conectadas (estaban creadas pero muertas):**
+- Auditoría (`auditStore`) integrada en ventas/pedidos/caja/login/turnos/stock/proveedores
+- Cupones: nueva pantalla admin `(admin)/coupons.tsx` (crear/listar/desactivar)
+- Devoluciones: nueva pantalla admin `(admin)/returns.tsx` (procesa reembolso + repone stock + egreso en caja)
+- Clientes: auto-registro al confirmar pedido delivery (por teléfono) con acumulados
+- Recibo PDF: opción "Imprimir recibo" tras venta kiosko
+- Backup: botón en panel admin (JSON completo vía Sharing)
+- Split payment: componente reescrito (antes era stub) + integrado al carrito kiosko (múltiples métodos → múltiples movimientos de caja)
+- Pagos a proveedores ahora registran egreso en caja (supplier_payment) + auditoría
+
+**Pendiente conocido:**
+- Servicio `mercadolibre.ts` sigue sin UI (requiere credenciales ML) — futuro
+- Dark mode parcial en StyleSheets estáticos (Colors.xxx solo light)
+- `products/[id].tsx` agrega al carrito del negocio activo; revisar UX si se usa fuera de un negocio
 
 ---
 
@@ -137,8 +158,11 @@ colors.disabled      light:#BDBDBD  dark:#546E7A
 # Node y Git no están en PATH por defecto, usar:
 $env:PATH = "C:\nodejs\node-v20.18.0-win-x64;C:\Program Files\Git\cmd;C:\Program Files\Git\bin;C:\Windows\System32;C:\Windows"
 
-# TypeScript check
-npx tsc --noEmit
+# Typecheck
+npm run typecheck
+
+# Tests de lógica (50 checks de stores/flujos)
+npm test
 
 # Git
 git add -A

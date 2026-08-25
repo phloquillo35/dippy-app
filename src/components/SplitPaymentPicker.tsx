@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Alert } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { Colors, Spacing, BorderRadius } from '@/theme';
 import { useColors } from '@/theme/ThemeProvider';
 import { PaymentMethod } from '@/types';
@@ -25,19 +25,20 @@ const METHODS: { method: PaymentMethod; label: string; emoji: string }[] = [
 export function SplitPaymentPicker({ total, onConfirm }: SplitPaymentPickerProps) {
   const colors = useColors();
   const [payments, setPayments] = useState<SplitPayment[]>([]);
+  const [amountInput, setAmountInput] = useState('');
 
   const addedAmount = payments.reduce((s, p) => s + p.amount, 0);
-  const remaining = total - addedAmount;
+  const remaining = Math.round((total - addedAmount) * 100) / 100;
+  const covered = Math.abs(remaining) <= 1;
 
   const addPayment = (method: PaymentMethod) => {
-    if (remaining <= 0) {
-      Alert.alert('Completo', 'Ya cubriste el total');
-      return;
-    }
-    Alert.alert(
-      `Monto en ${METHODS.find(m => m.method === method)?.label}`,
-      `Restante: $${remaining.toLocaleString()} (Usá el campo en la pantalla del carrito)`,
-    );
+    if (remaining <= 0) return;
+
+    const parsed = parseFloat(amountInput.replace(',', '.'));
+    const amount = !isNaN(parsed) && parsed > 0 ? Math.min(parsed, remaining) : remaining;
+
+    setPayments(prev => [...prev, { method, amount }]);
+    setAmountInput('');
   };
 
   const removePayment = (index: number) => {
@@ -45,18 +46,16 @@ export function SplitPaymentPicker({ total, onConfirm }: SplitPaymentPickerProps
   };
 
   const handleConfirm = () => {
-    if (Math.abs(remaining) > 1) {
-      Alert.alert('Error', `Falta asignar $${remaining.toLocaleString()}`);
-      return;
-    }
+    if (!covered || payments.length === 0) return;
     onConfirm(payments);
     setPayments([]);
+    setAmountInput('');
   };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <Text style={[styles.title, { color: colors.textPrimary }]}>💳 Pago dividido</Text>
-      <Text style={[styles.remaining, { color: remaining > 0 ? Colors.advertencia : Colors.exito }]}>
+      <Text style={[styles.remaining, { color: remaining > 1 ? Colors.advertencia : remaining < -1 ? Colors.error : Colors.exito }]}>
         Restante: ${remaining.toLocaleString()}
       </Text>
 
@@ -72,18 +71,36 @@ export function SplitPaymentPicker({ total, onConfirm }: SplitPaymentPickerProps
         );
       })}
 
+      {!covered && (
+        <TextInput
+          style={[styles.amountInput, { color: colors.textPrimary, borderColor: colors.border }]}
+          placeholder={`Monto (vacío = restante $${remaining.toLocaleString()})`}
+          placeholderTextColor={colors.placeholder}
+          keyboardType="decimal-pad"
+          value={amountInput}
+          onChangeText={setAmountInput}
+        />
+      )}
+
       <View style={styles.methodsRow}>
         {METHODS.map(m => (
-          <Text key={m.method} style={[styles.methodChip, { backgroundColor: `${Colors.celesteInstitucional}20`, color: Colors.celesteInstitucional }]} onPress={() => addPayment(m.method)}>
-            {m.emoji} {m.label}
-          </Text>
+          <TouchableOpacity
+            key={m.method}
+            style={[styles.methodChip, { backgroundColor: `${Colors.celesteInstitucional}20` }, covered && styles.methodDisabled]}
+            onPress={() => addPayment(m.method)}
+            disabled={covered}
+          >
+            <Text style={{ color: Colors.celesteInstitucional, fontSize: 12, fontWeight: '600' }}>
+              {m.emoji} {m.label}
+            </Text>
+          </TouchableOpacity>
         ))}
       </View>
 
-      {payments.length > 0 && Math.abs(remaining) <= 1 && (
-        <Text style={[styles.confirmText, { color: Colors.exito }]} onPress={handleConfirm}>
-          ✓ Confirmar pago dividido
-        </Text>
+      {covered && payments.length > 0 && (
+        <TouchableOpacity style={[styles.confirmBtn, { backgroundColor: Colors.exito }]} onPress={handleConfirm}>
+          <Text style={[styles.confirmText, { color: Colors.blanco }]}>✓ Confirmar pago dividido y vender</Text>
+        </TouchableOpacity>
       )}
     </View>
   );
@@ -95,7 +112,10 @@ const styles = StyleSheet.create({
   remaining: { fontSize: 14, fontWeight: '600', marginBottom: 8 },
   paymentRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6, borderBottomWidth: 1 },
   removeBtn: { color: Colors.error, fontSize: 16, paddingLeft: 12, fontWeight: 'bold' },
+  amountInput: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, fontSize: 14, marginTop: 8 },
   methodsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
-  methodChip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, fontSize: 12, fontWeight: '600' },
-  confirmText: { textAlign: 'center', marginTop: 10, fontWeight: 'bold', fontSize: 15 },
+  methodChip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 },
+  methodDisabled: { opacity: 0.4 },
+  confirmBtn: { padding: 12, borderRadius: 10, alignItems: 'center', marginTop: 10 },
+  confirmText: { textAlign: 'center', fontWeight: 'bold', fontSize: 15 },
 });

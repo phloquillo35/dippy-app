@@ -7,6 +7,8 @@ import { useUserStore } from './userStore';
 import { useCashStore } from './cashStore';
 import { useProductStore } from './productStore';
 import { useOrderStore } from './orderStore';
+import { useAuditStore } from './auditStore';
+import { SplitPayment } from '@/components/SplitPaymentPicker';
 
 interface CartState {
   items: CartItem[];
@@ -15,7 +17,7 @@ interface CartState {
   paymentMethod: PaymentMethod | null;
   amountPaid: number;
 
-  addItem: (product: any, variantId?: string, quantity?: number) => void;
+  addItem: (product: any, variantId?: string, quantity?: number) => 'ok' | 'no_stock' | 'capped';
   removeItem: (itemId: string) => void;
   updateQuantity: (itemId: string, quantity: number) => void;
   clearCart: () => void;
@@ -29,7 +31,7 @@ interface CartState {
   getItemCount: () => number;
   getChange: () => number;
 
-  confirmStoreOrder: (businessId?: BusinessType) => string | null;
+  confirmStoreOrder: (businessId?: BusinessType, splitPayments?: SplitPayment[]) => string | null;
 }
 
 export const useCartStore = create<CartState>()(
@@ -42,6 +44,16 @@ export const useCartStore = create<CartState>()(
       amountPaid: 0,
 
       addItem: (product, variantId, quantity = 1) => {
+        // Validación de stock considerando lo ya agregado al carrito
+        const available = Math.floor(product.stock ?? 0) - get()
+          .items.filter(i => i.productId === product.id)
+          .reduce((sum, i) => sum + i.quantity, 0);
+
+        if (available <= 0) return 'no_stock';
+
+        const addQty = Math.min(quantity, available);
+        const capped = addQty < quantity;
+
         const existingItem = get().items.find(
           i => i.productId === product.id && i.variantId === variantId
         );
@@ -52,8 +64,8 @@ export const useCartStore = create<CartState>()(
               i.id === existingItem.id
                 ? {
                     ...i,
-                    quantity: i.quantity + quantity,
-                    totalPrice: (i.quantity + quantity) * i.unitPrice,
+                    quantity: i.quantity + addQty,
+                    totalPrice: (i.quantity + addQty) * i.unitPrice,
                   }
                 : i
             ),
@@ -65,14 +77,16 @@ export const useCartStore = create<CartState>()(
             productName: product.name,
             productImage: product.imageUrl,
             variantId,
-            quantity,
+            quantity: addQty,
             unitPrice: product.salePrice,
             costPrice: product.costPrice,
-            totalPrice: product.salePrice * quantity,
+            totalPrice: product.salePrice * addQty,
             emoji: product.emoji,
           };
           set(state => ({ items: [...state.items, newItem] }));
         }
+
+        return capped ? 'capped' : 'ok';
       },
 
       removeItem: (itemId) => {
@@ -118,7 +132,7 @@ export const useCartStore = create<CartState>()(
         return paid > total ? paid - total : 0;
       },
 
-      confirmStoreOrder: (businessId = 'kiosko') => {
+      confirmStoreOrder: (businessId = 'kiosko', splitPayments) => {
         const { items, notes, discount, paymentMethod } = get();
         if (items.length === 0) return null;
 
@@ -126,7 +140,9 @@ export const useCartStore = create<CartState>()(
         const currentUser = useUserStore.getState().currentUser;
         if (!currentUser) return null;
 
-        const payMethod = paymentMethod || 'efectivo';
+        const payMethod = splitPayments?.length
+          ? splitPayments[0].method
+          : paymentMethod || 'efectivo';
 
         // Crear orden de venta (canal store)
         const order = useOrderStore.getState().createStoreOrder(
@@ -134,23 +150,30 @@ export const useCartStore = create<CartState>()(
           items,
           notes,
           currentUser.name,
-          payMethod,
-          total
+          payMethod as PaymentMethod,
+          total,
+          Math.max(0, get().getSubtotal() - total)
         );
 
         // Registrar venta en turno
         useUserStore.getState().recordSale(total, items.length, 'store');
 
-        // Registrar movimiento en caja
+        // Registrar movimientos en caja (uno por método si es pago dividido)
         const cashRegister = useCashStore.getState().getOpenRegister(businessId);
         if (cashRegister) {
-          useCashStore.getState().addMovement(cashRegister.id, {
-            type: 'sale',
-            amount: total,
-            description: `Venta #${order?.id.slice(-6).toUpperCase() || Date.now().toString(36).toUpperCase()} - ${items.length} items`,
-            paymentMethod: payMethod,
-            userId: currentUser.id,
-            userName: currentUser.name,
+          const movements: Array<{ method: PaymentMethod; amount: number }> = splitPayments?.length
+            ? splitPayments.map(p => ({ method: p.method, amount: p.amount }))
+            : [{ method: payMethod as PaymentMethod, amount: total }];
+
+          movements.forEach(m => {
+            useCashStore.getState().addMovement(cashRegister.id, {
+              type: 'sale',
+              amount: m.amount,
+              description: `Venta #${order?.id.slice(-6).toUpperCase() || Date.now().toString(36).toUpperCase()} - ${items.length} items`,
+              paymentMethod: m.method,
+              userId: currentUser.id,
+              userName: currentUser.name,
+            });
           });
         }
 
@@ -160,10 +183,19 @@ export const useCartStore = create<CartState>()(
             item.productId,
             item.quantity,
             'out',
-            `Venta en kiosko`,
+            businessId === 'delivery' ? 'Venta en delivery' : 'Venta en kiosko',
             currentUser.id,
             currentUser.name
           );
+        });
+
+        useAuditStore.getState().log({
+          action: 'sale',
+          userId: currentUser.id,
+          userName: currentUser.name,
+          businessId,
+          description: `Venta #${order?.id.slice(-6).toUpperCase()} registrada${splitPayments?.length ? ' (pago dividido)' : ''}`,
+          metadata: { total, items: items.length },
         });
 
         set({ items: [], notes: '', discount: 0, paymentMethod: null, amountPaid: 0 });

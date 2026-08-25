@@ -12,6 +12,7 @@ export default function DeliveryProductDetail() {
   const colors = useColors();
   const product = useProductStore(s => s.getProductById(id!));
   const addItem = useDeliveryCartStore(s => s.addItem);
+  const cartItems = useDeliveryCartStore(s => s.items);
   const [qty, setQty] = useState(1);
 
   if (!product) {
@@ -26,8 +27,13 @@ export default function DeliveryProductDetail() {
     );
   }
 
-  const maxQty = product.stock;
-  const canAdd = product.stock > 0;
+  const maxQty = Math.max(
+    0,
+    product.stock - cartItems
+      .filter(i => i.productId === product.id)
+      .reduce((sum, i) => sum + i.quantity, 0)
+  );
+  const canAdd = maxQty > 0;
 
   const handleAdd = () => {
     if (!canAdd) {

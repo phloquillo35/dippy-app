@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { Product, ProductVariant, ProductCategory, StockMovement, BusinessType } from '@/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { generateId } from '@/utils/uuid';
+import { useAuditStore } from './auditStore';
 
 interface ProductState {
   products: Product[];
@@ -256,6 +257,13 @@ export const useProductStore = create<ProductState>()(
           updatedAt: new Date().toISOString(),
         };
         set(state => ({ products: [...state.products, product] }));
+        useAuditStore.getState().log({
+          action: 'product_created',
+          userId: '',
+          userName: '',
+          businessId: product.businessId,
+          description: `Producto creado: ${product.name}`,
+        });
         return product;
       },
 
@@ -268,11 +276,21 @@ export const useProductStore = create<ProductState>()(
       },
 
       deleteProduct: (id) => {
+        const product = get().products.find(p => p.id === id);
         set(state => ({
           products: state.products.map(p =>
             p.id === id ? { ...p, isActive: false } : p
           ),
         }));
+        if (product) {
+          useAuditStore.getState().log({
+            action: 'product_deleted',
+            userId: '',
+            userName: '',
+            businessId: product.businessId,
+            description: `Producto eliminado: ${product.name}`,
+          });
+        }
       },
 
       getProducts: (businessId) => {
@@ -361,6 +379,14 @@ export const useProductStore = create<ProductState>()(
           ),
           stockMovements: [movement, ...state.stockMovements],
         }));
+
+        useAuditStore.getState().log({
+          action: type === 'return' ? 'stock_return' : 'stock_adjustment',
+          userId,
+          userName,
+          businessId: product.businessId,
+          description: `${product.name}: ${product.stock} → ${Math.max(0, newStock)} (${reason})`,
+        });
       },
 
       setSearchQuery: (query) => set({ searchQuery: query }),

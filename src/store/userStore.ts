@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { User, WorkTurn, UserRole, TurnShift, BusinessType } from '@/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { generateId } from '@/utils/uuid';
+import { useAuditStore } from './auditStore';
 
 interface UserState {
   currentUser: User | null;
@@ -115,6 +116,12 @@ export const useUserStore = create<UserState>()(
             currentUser: updatedUser,
             users: state.users.map(u => u.id === user.id ? updatedUser : u),
           }));
+          useAuditStore.getState().log({
+            action: 'login',
+            userId: user.id,
+            userName: user.name,
+            description: 'Login con email',
+          });
           return updatedUser;
         }
         return null;
@@ -158,6 +165,13 @@ export const useUserStore = create<UserState>()(
             users: state.users.map(u => u.id === userId ? updatedUser : u),
           }));
 
+          useAuditStore.getState().log({
+            action: 'login',
+            userId: user.id,
+            userName: user.name,
+            description: 'Login con PIN',
+          });
+
           return updatedUser;
         }
 
@@ -170,10 +184,19 @@ export const useUserStore = create<UserState>()(
       },
 
       logout: () => {
+        const user = get().currentUser;
         if (get().currentTurn) {
           get().endTurn();
         }
         set({ currentUser: null });
+        if (user) {
+          useAuditStore.getState().log({
+            action: 'logout',
+            userId: user.id,
+            userName: user.name,
+            description: 'Cierre de sesión',
+          });
+        }
       },
 
       isAdmin: () => {
@@ -262,6 +285,13 @@ export const useUserStore = create<UserState>()(
         };
 
         set({ currentTurn: newTurn });
+        useAuditStore.getState().log({
+          action: 'turn_started',
+          userId: user.id,
+          userName: user.name,
+          businessId,
+          description: `Turno ${shift} iniciado`,
+        });
         return newTurn;
       },
 
@@ -280,6 +310,15 @@ export const useUserStore = create<UserState>()(
           currentTurn: null,
           turnsHistory: [completedTurn, ...state.turnsHistory],
         }));
+
+        useAuditStore.getState().log({
+          action: 'turn_ended',
+          userId: turn.userId,
+          userName: turn.userName,
+          businessId: turn.businessId,
+          description: `Turno finalizado — ${turn.totalOrders} ventas`,
+          metadata: { totalSales: turn.totalSales },
+        });
 
         return completedTurn;
       },

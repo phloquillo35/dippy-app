@@ -17,6 +17,8 @@ export default function AdminLayout() {
       <Stack.Screen name="customers" options={{ title: '👥 Clientes' }} />
       <Stack.Screen name="team" options={{ title: '👷 Equipo' }} />
       <Stack.Screen name="reconciliation" options={{ title: '💳 Conciliación' }} />
+      <Stack.Screen name="coupons" options={{ title: '🎫 Cupones' }} />
+      <Stack.Screen name="returns" options={{ title: '↩︎ Devoluciones' }} />
     </Stack>
   );
 }

@@ -24,7 +24,7 @@ export default function MetricsScreen() {
   // Redirect if not admin
   useEffect(() => {
     if (!isAdmin) {
-      router.replace('/(tabs)');
+      router.replace('/');
     }
   }, [isAdmin]);
 

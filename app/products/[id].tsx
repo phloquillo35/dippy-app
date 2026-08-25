@@ -5,6 +5,8 @@ import { Colors, Spacing, BorderRadius } from '@/theme';
 import { useColors } from '@/theme/ThemeProvider';
 import { useProductStore } from '@/store/productStore';
 import { useCartStore } from '@/store/cartStore';
+import { useDeliveryCartStore } from '@/store/deliveryCartStore';
+import { useBusinessStore } from '@/store/businessStore';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { formatCurrency } from '@/utils/uuid';
@@ -14,6 +16,7 @@ export default function ProductDetailScreen() {
   const colors = useColors();
   const getProductById = useProductStore(s => s.getProductById);
   const addItem = useCartStore(s => s.addItem);
+  const activeBusiness = useBusinessStore(s => s.activeBusiness);
   const product = getProductById(id!);
   const [qty, setQty] = useState(1);
 
@@ -28,10 +31,19 @@ export default function ProductDetailScreen() {
   }
 
   const handleAdd = () => {
-    addItem(product, undefined, qty);
+    const cartRoute = activeBusiness === 'delivery' ? '/(delivery)/cart' : '/(kiosko)/cart';
+
+    // Agregar al carrito del negocio activo (o al del producto si no hay activo)
+    const target = activeBusiness ?? product.businessId;
+    if (target === 'delivery') {
+      useDeliveryCartStore.getState().addItem(product, undefined, qty);
+    } else {
+      addItem(product, undefined, qty);
+    }
+
     Alert.alert('Agregado', `${qty}x ${product.name} en el carrito`, [
       { text: 'Seguir', onPress: () => router.back() },
-      { text: 'Ir al carrito', onPress: () => router.push('/(tabs)/cart') },
+      { text: 'Ir al carrito', onPress: () => router.push(cartRoute) },
     ]);
   };
 

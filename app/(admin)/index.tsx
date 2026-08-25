@@ -1,11 +1,12 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Colors, Spacing, BorderRadius } from '@/theme';
 import { useColors } from '@/theme/ThemeProvider';
 import { useCashStore } from '@/store/cashStore';
 import { useOrderStore } from '@/store/orderStore';
 import { useProductStore } from '@/store/productStore';
 import { useUserStore } from '@/store/userStore';
+import { useAuditStore } from '@/store/auditStore';
 import { formatCurrency } from '@/utils/uuid';
 
 export default function AdminDashboard() {
@@ -189,6 +190,37 @@ export default function AdminDashboard() {
           <TouchableOpacity style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => (require('expo-router').router.push('/(admin)/reconciliation'))}>
             <Text style={styles.statEmoji}>💳</Text>
             <Text style={[styles.statValue, { color: Colors.azulInstitucional }]}>Conciliación</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => (require('expo-router').router.push('/(admin)/coupons'))}>
+            <Text style={styles.statEmoji}>🎫</Text>
+            <Text style={[styles.statValue, { color: Colors.exito }]}>Cupones</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.statsRow}>
+          <TouchableOpacity style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => (require('expo-router').router.push('/(admin)/returns'))}>
+            <Text style={styles.statEmoji}>↩︎</Text>
+            <Text style={[styles.statValue, { color: Colors.error }]}>Devoluciones</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() => {
+              import('@/services/backup').then(({ exportFullBackup }) =>
+                exportFullBackup()
+                  .then(() => {
+                    useAuditStore.getState().log({
+                      action: 'backup_exported',
+                      userId: '',
+                      userName: '',
+                      description: 'Backup completo exportado',
+                    });
+                    Alert.alert('✅', 'Backup exportado y compartido');
+                  })
+                  .catch((e: Error) => Alert.alert('Error', e.message))
+              );
+            }}
+          >
+            <Text style={styles.statEmoji}>💾</Text>
+            <Text style={[styles.statValue, { color: colors.textPrimary }]}>Backup</Text>
           </TouchableOpacity>
           <View style={{ flex: 1 }} />
         </View>

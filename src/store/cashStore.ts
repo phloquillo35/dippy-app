@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CashRegister, CashMovement, BusinessType, PaymentMethod } from '@/types';
 import { generateId } from '@/utils/uuid';
+import { useAuditStore } from './auditStore';
 
 interface CashState {
   registers: CashRegister[];
@@ -56,10 +57,18 @@ export const useCashStore = create<CashState>()(
         };
 
         set(state => ({ registers: [register, ...state.registers] }));
+        useAuditStore.getState().log({
+          action: 'cash_open',
+          userId,
+          userName,
+          businessId,
+          description: `Caja abierta con $${openingAmount.toLocaleString()}`,
+        });
         return register;
       },
 
       closeRegister: (registerId, closingAmount, userId, userName) => {
+        const register = get().registers.find(r => r.id === registerId);
         set(state => ({
           registers: state.registers.map(r =>
             r.id === registerId
@@ -74,6 +83,15 @@ export const useCashStore = create<CashState>()(
               : r
           ),
         }));
+        if (register) {
+          useAuditStore.getState().log({
+            action: 'cash_close',
+            userId,
+            userName,
+            businessId: register.businessId,
+            description: `Caja cerrada — monto final $${closingAmount.toLocaleString()}`,
+          });
+        }
       },
 
       addMovement: (registerId, movementData) => {

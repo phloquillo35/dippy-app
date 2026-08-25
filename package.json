@@ -8,7 +8,8 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "tsx scripts/logic-test.ts"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.1.0",
@@ -45,6 +46,7 @@
     "@types/react": "~18.3.0",
     "eslint": "^8.56.0",
     "prettier": "^3.2.0",
+    "tsx": "^4.23.12",
     "typescript": "~5.3.0"
   },
   "private": true

@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Alert, M
 import { Colors, Spacing, BorderRadius } from '@/theme';
 import { useColors } from '@/theme/ThemeProvider';
 import { useProviderStore } from '@/store/providerStore';
+import { useCashStore } from '@/store/cashStore';
+import { useAuditStore } from '@/store/auditStore';
 import { useUserStore } from '@/store/userStore';
 import { Provider, PaymentMethod, ProductCategory } from '@/types';
 import { formatCurrency } from '@/utils/uuid';
@@ -55,7 +57,30 @@ export function ProvidersList({ businessId, accentColor = Colors.celesteInstituc
     const amount = parseFloat(paymentAmount);
     if (isNaN(amount) || amount <= 0) return Alert.alert('Error', 'Monto inválido');
     addPayment(selectedProvider.id, amount, paymentMethod, currentUser?.id || 'unknown', paymentReason || undefined);
-    Alert.alert('✅', `Pago de $${amount.toLocaleString()} registrado a ${selectedProvider.name}`);
+
+    // Registrar egreso en la caja abierta del negocio
+    const register = useCashStore.getState().getOpenRegister(businessId);
+    if (register) {
+      useCashStore.getState().addMovement(register.id, {
+        type: 'supplier_payment',
+        amount,
+        description: `Pago a proveedor: ${selectedProvider.name}`,
+        paymentMethod,
+        userId: currentUser?.id || '',
+        userName: currentUser?.name || '',
+      });
+    }
+
+    useAuditStore.getState().log({
+      action: 'supplier_payment',
+      userId: currentUser?.id || '',
+      userName: currentUser?.name || 'unknown',
+      businessId,
+      description: `Pago de $${amount.toLocaleString()} a ${selectedProvider.name}`,
+      metadata: { providerId: selectedProvider.id },
+    });
+
+    Alert.alert('✅', `Pago de $${amount.toLocaleString()} registrado a ${selectedProvider.name}${register ? '' : ' (sin caja abierta: no se descontó de caja)'}`);
     setPaymentModalVisible(false);
     setSelectedProvider(null);
   };

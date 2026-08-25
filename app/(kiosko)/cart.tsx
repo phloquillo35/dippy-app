@@ -8,6 +8,8 @@ import { useCouponStore } from '@/store/couponStore';
 import { PaymentMethod } from '@/types';
 import { formatCurrency } from '@/utils/uuid';
 import { hapticMedium, hapticSuccess, hapticError } from '@/utils/haptics';
+import { SplitPaymentPicker, SplitPayment } from '@/components/SplitPaymentPicker';
+import { useOrderStore } from '@/store/orderStore';
 
 const PAYMENT_OPTIONS: { method: PaymentMethod; label: string; emoji: string }[] = [
   { method: 'efectivo', label: 'Efectivo', emoji: '💵' },
@@ -25,10 +27,50 @@ export default function KioskoCartScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
+  const [splitMode, setSplitMode] = useState(false);
 
   const filteredProducts = searchQuery ? searchProducts(searchQuery, 'kiosko') : [];
   const subtotal = getSubtotal();
   const total = getTotal();
+
+  const executeSale = (split?: SplitPayment[]) => {
+    hapticMedium();
+    const orderId = useCartStore.getState().confirmStoreOrder('kiosko', split);
+    if (orderId && appliedCoupon) applyCoupon(appliedCoupon);
+
+    hapticSuccess();
+    setAppliedCoupon(null);
+    setCouponCode('');
+    setSplitMode(false);
+
+    Alert.alert('✅', 'Venta registrada', [
+      { text: 'OK', style: 'cancel' },
+      ...(orderId
+        ? [{
+            text: '🧾 Imprimir recibo',
+            onPress: () => {
+              const order = useOrderStore.getState().getOrderById(orderId);
+              if (!order) return;
+              import('@/services/receipt').then(({ generateReceipt }) =>
+                generateReceipt({
+                  businessName: '🏪 Dippy Kiosko',
+                  businessSubtitle: 'Venta directa',
+                  orderId: order.id,
+                  items: order.items,
+                  subtotal: order.subtotal,
+                  discount: order.discount,
+                  total: order.total,
+                  paymentMethod: order.paymentMethod,
+                  cashierName: order.userName,
+                  date: order.createdAt,
+                  accentColor: '#00C8FF',
+                }).catch(() => Alert.alert('Error', 'No se pudo generar el recibo'))
+              );
+            },
+          }]
+        : []),
+    ]);
+  };
 
   const handleApplyCoupon = () => {
     if (!couponCode.trim()) return;
@@ -68,11 +110,16 @@ export default function KioskoCartScreen() {
               <TouchableOpacity
                 style={styles.productItem}
                 onPress={() => {
-                  if (item.stock <= 0) {
+                  const result = addItem(item);
+                  if (result === 'no_stock') {
+                    hapticError();
                     Alert.alert('Sin stock', `${item.name} no tiene stock disponible`);
                     return;
                   }
-                  addItem(item);
+                  if (result === 'capped') {
+                    hapticError();
+                    Alert.alert('Stock limitado', `Solo podés agregar hasta ${item.stock} unidades de ${item.name}`);
+                  }
                   hapticMedium();
                   setSearchQuery('');
                 }}
@@ -170,30 +217,32 @@ export default function KioskoCartScreen() {
           </View>
 
           <TouchableOpacity
-            style={[styles.sellBtn, { backgroundColor: !paymentMethod ? Colors.grisMedio : Colors.exito }]}
-            disabled={!paymentMethod}
-            onPress={() => {
-              if (!paymentMethod) return;
-              hapticMedium();
-              const payLabel = PAYMENT_OPTIONS.find(o => o.method === paymentMethod)?.label || paymentMethod;
-              Alert.alert('Confirmar venta', `Total: $${total.toLocaleString()}\nPago: ${payLabel}${appliedCoupon ? `\nCupón: ${appliedCoupon}` : ''}`, [
-                { text: 'Cancelar', style: 'cancel' },
-                {
-                  text: 'Vender',
-                  onPress: () => {
-                    useCartStore.getState().confirmStoreOrder('kiosko');
-                    if (appliedCoupon) applyCoupon(appliedCoupon);
-                    hapticSuccess();
-                    setAppliedCoupon(null);
-                    setCouponCode('');
-                    Alert.alert('✅', 'Venta registrada');
-                  },
-                },
-              ]);
-            }}
+            style={[styles.splitToggle, { borderColor: splitMode ? Colors.exito : colors.border }]}
+            onPress={() => setSplitMode(!splitMode)}
           >
-            <Text style={styles.sellBtnText}>Cobrar ${total.toLocaleString()}</Text>
+            <Text style={{ color: splitMode ? Colors.exito : colors.textSecondary, fontSize: 13, fontWeight: '600' }}>
+              💳 Pago dividido {splitMode ? 'ON' : 'OFF'}
+            </Text>
           </TouchableOpacity>
+
+          {splitMode ? (
+            <SplitPaymentPicker total={total} onConfirm={payments => executeSale(payments)} />
+          ) : (
+            <TouchableOpacity
+              style={[styles.sellBtn, { backgroundColor: !paymentMethod ? Colors.grisMedio : Colors.exito }]}
+              disabled={!paymentMethod}
+              onPress={() => {
+                if (!paymentMethod) return;
+                const payLabel = PAYMENT_OPTIONS.find(o => o.method === paymentMethod)?.label || paymentMethod;
+                Alert.alert('Confirmar venta', `Total: $${total.toLocaleString()}\nPago: ${payLabel}${appliedCoupon ? `\nCupón: ${appliedCoupon}` : ''}`, [
+                  { text: 'Cancelar', style: 'cancel' },
+                  { text: 'Vender', onPress: () => executeSale() },
+                ]);
+              }}
+            >
+              <Text style={styles.sellBtnText}>Cobrar ${total.toLocaleString()}</Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
     </View>
@@ -224,5 +273,6 @@ const styles = StyleSheet.create({
   payBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, borderWidth: 1, gap: 4 },
   payEmoji: { fontSize: 14 },
   sellBtn: { paddingVertical: 14, borderRadius: 12, alignItems: 'center', marginTop: 10 },
+  splitToggle: { borderWidth: 1, borderRadius: 10, alignItems: 'center', paddingVertical: 8, marginTop: 8 },
   sellBtnText: { color: Colors.blanco, fontSize: 18, fontWeight: 'bold' },
 });

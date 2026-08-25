@@ -3,6 +3,8 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { CartItem, Product, ProductVariant } from '@/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useOrderStore } from './orderStore';
+import { useCustomerStore } from './customerStore';
+import { useAuditStore } from './auditStore';
 
 interface DeliveryCartState {
   items: CartItem[];
@@ -14,7 +16,7 @@ interface DeliveryCartState {
   deliveryFee: number;
 
   // Actions
-  addItem: (product: Product, variant?: ProductVariant, quantity?: number) => void;
+  addItem: (product: Product, variant?: ProductVariant, quantity?: number) => 'ok' | 'no_stock' | 'capped';
   removeItem: (itemId: string) => void;
   updateQuantity: (itemId: string, quantity: number) => void;
   clearCart: () => void;
@@ -47,6 +49,16 @@ export const useDeliveryCartStore = create<DeliveryCartState>()(
       deliveryFee: 500,
 
       addItem: (product, variant, quantity = 1) => {
+        // Validación de stock considerando lo ya agregado al carrito
+        const available = Math.floor(product.stock ?? 0) - get()
+          .items.filter(item => item.productId === product.id)
+          .reduce((sum, item) => sum + item.quantity, 0);
+
+        if (available <= 0) return 'no_stock';
+
+        const addQty = Math.min(quantity, available);
+        const capped = addQty < quantity;
+
         const variantId = variant?.id;
         const itemId = generateItemId(product.id, variantId);
 
@@ -62,8 +74,8 @@ export const useDeliveryCartStore = create<DeliveryCartState>()(
           const newItems = [...get().items];
           newItems[existingIndex] = {
             ...newItems[existingIndex],
-            quantity: newItems[existingIndex].quantity + quantity,
-            totalPrice: (newItems[existingIndex].quantity + quantity) * unitPrice,
+            quantity: newItems[existingIndex].quantity + addQty,
+            totalPrice: (newItems[existingIndex].quantity + addQty) * unitPrice,
           };
           set({ items: newItems });
         } else {
@@ -74,14 +86,16 @@ export const useDeliveryCartStore = create<DeliveryCartState>()(
             productImage: product.imageUrl,
             variantId,
             variantName,
-            quantity,
+            quantity: addQty,
             unitPrice,
             costPrice,
-            totalPrice: unitPrice * quantity,
+            totalPrice: unitPrice * addQty,
             emoji: product.emoji,
           };
           set({ items: [...get().items, newItem] });
         }
+
+        return capped ? 'capped' : 'ok';
       },
 
       removeItem: (itemId) => {
@@ -113,7 +127,12 @@ export const useDeliveryCartStore = create<DeliveryCartState>()(
         });
       },
 
-      setCustomerInfo: (info) => set(state => ({ ...state, ...info })),
+      // Los callers pasan { name, phone, address }; mapear a las claves reales del estado
+      setCustomerInfo: (info) => set(state => ({
+        customerName: info.name ?? state.customerName,
+        customerPhone: info.phone ?? state.customerPhone,
+        customerAddress: info.address ?? state.customerAddress,
+      })),
 
       setNotes: (notes) => set({ notes }),
 
@@ -147,7 +166,36 @@ export const useDeliveryCartStore = create<DeliveryCartState>()(
           userName,
           source,
           state.deliveryFee,
+          state.discount,
         );
+
+        // Registrar cliente automáticamente (si tiene teléfono)
+        if (order && state.customerPhone.trim()) {
+          const customerStore = useCustomerStore.getState();
+          let customer = customerStore.getCustomerByPhone(state.customerPhone.trim());
+          if (customer) {
+            customerStore.updateCustomer(customer.id, {
+              name: state.customerName || customer.name,
+              address: state.customerAddress || customer.address,
+            });
+          } else {
+            customer = customerStore.addCustomer({
+              name: state.customerName || 'Cliente',
+              phone: state.customerPhone.trim(),
+              address: state.customerAddress,
+              businessIds: ['delivery'],
+            });
+          }
+          customerStore.recordOrder(customer.id, order.total);
+        }
+
+        useAuditStore.getState().log({
+          action: 'order_created',
+          userId: '',
+          userName,
+          businessId: 'delivery',
+          description: `Pedido delivery #${order?.id.slice(-6).toUpperCase()} confirmado en caja`,
+        });
 
         get().clearCart();
         return order ? order.id : null;

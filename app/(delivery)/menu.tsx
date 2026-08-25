@@ -18,11 +18,14 @@ export default function DeliveryMenuScreen() {
   const filtered = searchQuery ? searchProducts(searchQuery, 'delivery') : products;
 
   const handleAdd = (item: any) => {
-    if (item.stock <= 0) {
+    const result = addItem(item);
+    if (result === 'no_stock') {
       Alert.alert('Sin stock', `${item.name} no está disponible`);
       return;
     }
-    addItem(item);
+    if (result === 'capped') {
+      Alert.alert('Stock limitado', `Solo podés agregar hasta ${item.stock} unidades de ${item.name}`);
+    }
   };
 
   return (

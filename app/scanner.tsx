@@ -75,7 +75,7 @@ export default function ScannerScreen() {
         },
         {
           text: '🛒 Ver carrito',
-          onPress: () => router.push('/(tabs)/cart'),
+          onPress: () => router.push('/(kiosko)/cart'),
         },
       ]
     );
