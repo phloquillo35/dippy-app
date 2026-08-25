@@ -61,14 +61,14 @@ export default function AdminReportsScreen() {
             style={[styles.periodBtn, { backgroundColor: period === p ? Colors.celesteInstitucional : colors.card, borderColor: colors.border }]}
             onPress={() => setPeriod(p)}
           >
-            <Text style={[styles.periodText, { color: period === p ? '#FFF' : colors.textPrimary }]}>
+            <Text style={[styles.periodText, { color: period === p ? colors.textOnPrimary : colors.textPrimary }]}>
               {p === 'today' ? 'Hoy' : p === 'week' ? '7 días' : 'Mes'}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      <View style={[styles.summaryCard, { backgroundColor: '#1A1A2E' }]}>
+      <View style={[styles.summaryCard, { backgroundColor: Colors.negroSuave }]}>
         <Text style={styles.summaryTitle}>📊 Resumen {label}</Text>
         <View style={styles.summaryRow}>
           <Text style={styles.summaryLabel}>Ingresos</Text>
@@ -82,8 +82,8 @@ export default function AdminReportsScreen() {
           <Text style={styles.summaryLabel}>Devoluciones</Text>
           <Text style={[styles.summaryValue, { color: Colors.advertencia }]}>{formatCurrency(totalRefunds)}</Text>
         </View>
-        <View style={[styles.summaryRow, { borderTopWidth: 1, borderTopColor: '#444', paddingTop: 8, marginTop: 4 }]}>
-          <Text style={[styles.summaryLabel, { color: '#FFF', fontWeight: 'bold' }]}>Ganancia Neta</Text>
+        <View style={[styles.summaryRow, { borderTopWidth: 1, borderTopColor: Colors.grisOscuro, paddingTop: 8, marginTop: 4 }]}>
+          <Text style={[styles.summaryLabel, { color: colors.textOnPrimary, fontWeight: 'bold' }]}>Ganancia Neta</Text>
           <Text style={[styles.summaryValue, { color: netProfit >= 0 ? Colors.exito : Colors.error, fontSize: 22 }]}>
             {formatCurrency(netProfit)}
           </Text>
@@ -137,9 +137,9 @@ const styles = StyleSheet.create({
   periodBtn: { flex: 1, padding: 10, borderRadius: 10, alignItems: 'center', borderWidth: 1 },
   periodText: { fontWeight: '600', fontSize: 13 },
   summaryCard: { margin: Spacing.md, padding: Spacing.lg, borderRadius: BorderRadius.xl },
-  summaryTitle: { color: '#FFF', fontSize: 16, fontWeight: 'bold', marginBottom: 12 },
+  summaryTitle: { color: Colors.blanco, fontSize: 16, fontWeight: 'bold', marginBottom: 12 },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  summaryLabel: { color: '#AAA', fontSize: 14 },
+  summaryLabel: { color: Colors.grisMedio, fontSize: 14 },
   summaryValue: { fontSize: 16, fontWeight: 'bold' },
   section: { padding: Spacing.md },
   sectionTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 10 },

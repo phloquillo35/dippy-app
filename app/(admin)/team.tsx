@@ -44,7 +44,7 @@ export default function AdminTeamScreen() {
                   <Text style={{ color: colors.textSecondary, fontSize: 11 }}>{turn.totalOrders} ventas</Text>
                 </View>
               </View>
-              <Text style={{ color: '#999', fontSize: 11, marginTop: 4 }}>
+              <Text style={{ color: colors.placeholder, fontSize: 11, marginTop: 4 }}>
                 Desde: {new Date(turn.startTime).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
               </Text>
             </View>
@@ -101,5 +101,5 @@ const styles = StyleSheet.create({
   userAvatar: { fontSize: 28 },
   userName: { fontSize: 15, fontWeight: '600' },
   statusDot: { width: 10, height: 10, borderRadius: 5 },
-  turnInfo: { marginTop: 6, paddingTop: 6, borderTopWidth: 1, borderTopColor: '#E0E0E0' },
+  turnInfo: { marginTop: 6, paddingTop: 6, borderTopWidth: 1, borderTopColor: Colors.grisClaro },
 });

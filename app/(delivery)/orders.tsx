@@ -146,9 +146,9 @@ export default function DeliveryOrdersScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  tabs: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#E0E0E0' },
+  tabs: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: Colors.grisClaro },
   tab: { flex: 1, paddingVertical: 14, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
-  tabText: { fontSize: 15, fontWeight: '600', color: '#999' },
+  tabText: { fontSize: 15, fontWeight: '600', color: Colors.grisMedio },
   list: { padding: Spacing.md },
   orderCard: { padding: Spacing.md, borderRadius: BorderRadius.lg, marginBottom: 12, borderWidth: 1 },
   orderHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },

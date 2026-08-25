@@ -36,14 +36,14 @@ export default function AdminMarginsScreen() {
             style={[styles.filterBtn, { backgroundColor: filter === f ? Colors.celesteInstitucional : colors.card, borderColor: colors.border }]}
             onPress={() => setFilter(f)}
           >
-            <Text style={[styles.filterText, { color: filter === f ? '#FFF' : colors.textPrimary }]}>
+            <Text style={[styles.filterText, { color: filter === f ? colors.textOnPrimary : colors.textPrimary }]}>
               {f === 'all' ? 'Todos' : f === 'kiosko' ? '🏪 Kiosko' : '🍕 Delivery'}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      <View style={[styles.avgCard, { backgroundColor: '#1A1A2E' }]}>
+      <View style={[styles.avgCard, { backgroundColor: Colors.negroSuave }]}>
         <Text style={styles.avgLabel}>Margen promedio</Text>
         <Text style={[styles.avgValue, { color: Colors.exito }]}>{avgMargin.toFixed(1)}%</Text>
         <Text style={styles.avgSub}>{productsWithMargin.length} productos con costo definido</Text>
@@ -99,13 +99,13 @@ const styles = StyleSheet.create({
   filterBtn: { flex: 1, padding: 10, borderRadius: 10, alignItems: 'center', borderWidth: 1 },
   filterText: { fontWeight: '600', fontSize: 13 },
   avgCard: { margin: Spacing.md, padding: Spacing.lg, borderRadius: BorderRadius.xl, alignItems: 'center' },
-  avgLabel: { color: '#AAA', fontSize: 14 },
+  avgLabel: { color: Colors.grisMedio, fontSize: 14 },
   avgValue: { fontSize: 36, fontWeight: 'bold', marginVertical: 4 },
-  avgSub: { color: '#888', fontSize: 12 },
+  avgSub: { color: Colors.grisMedio, fontSize: 12 },
   section: { padding: Spacing.md },
   sectionTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 10 },
   productRow: { flexDirection: 'row', alignItems: 'center', padding: Spacing.sm, borderRadius: BorderRadius.lg, marginBottom: 8, borderWidth: 1, gap: 8 },
-  rank: { fontSize: 14, fontWeight: 'bold', color: '#999', width: 30 },
+  rank: { fontSize: 14, fontWeight: 'bold', color: Colors.grisMedio, width: 30 },
   marginCol: { alignItems: 'flex-end' },
   marginValue: { fontSize: 16, fontWeight: 'bold' },
 });

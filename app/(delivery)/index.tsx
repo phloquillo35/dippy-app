@@ -53,6 +53,7 @@ export default function DeliveryHome() {
           { emoji: '💰', label: 'Caja', route: '/(delivery)/cash' },
           { emoji: '👥', label: 'Equipo', route: '/(delivery)/users' },
           { emoji: '🏢', label: 'Proveedores', route: '/(delivery)/providers' },
+          { emoji: '💬', label: 'Importar WhatsApp', route: '/(delivery)/whatsapp-import' },
         ].map((item, i) => (
           <TouchableOpacity key={i} style={[styles.quickBtn, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => router.push(item.route)}>
             <Text style={styles.quickEmoji}>{item.emoji}</Text>

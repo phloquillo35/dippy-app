@@ -131,7 +131,7 @@ export default function KioskoCashScreen() {
                 {MOVEMENT_TYPES.map(t => (
                   <TouchableOpacity key={t.key} style={[styles.typePill, movementType === t.key && { backgroundColor: Colors.celesteInstitucional }]} onPress={() => setMovementType(t.key)}>
                     <Text style={styles.typeEmoji}>{t.emoji}</Text>
-                    <Text style={[styles.typeLabel, movementType === t.key && { color: '#FFF' }]}>{t.label}</Text>
+                    <Text style={[styles.typeLabel, movementType === t.key && { color: colors.textOnPrimary }]}>{t.label}</Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
@@ -143,7 +143,7 @@ export default function KioskoCashScreen() {
                 {PAYMENT_METHODS.map(p => (
                   <TouchableOpacity key={p.key} style={[styles.typePill, paymentMethod === p.key && { backgroundColor: Colors.celesteInstitucional }]} onPress={() => setPaymentMethod(p.key)}>
                     <Text style={styles.typeEmoji}>{p.emoji}</Text>
-                    <Text style={[styles.typeLabel, paymentMethod === p.key && { color: '#FFF' }]}>{p.label}</Text>
+                    <Text style={[styles.typeLabel, paymentMethod === p.key && { color: colors.textOnPrimary }]}>{p.label}</Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
   openDesc: { fontSize: 14, marginBottom: 12 },
   amountInput: { width: 200, height: 50, borderWidth: 2, borderRadius: 12, textAlign: 'center', fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
   openBtn: { paddingVertical: 14, paddingHorizontal: 32, borderRadius: 12 },
-  openBtnText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
+  openBtnText: { color: Colors.blanco, fontSize: 16, fontWeight: 'bold' },
   statusCard: { margin: Spacing.md, padding: Spacing.lg, borderRadius: BorderRadius.xl, borderWidth: 2 },
   statusHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
   statusEmoji: { fontSize: 24, marginRight: 8 },
@@ -208,13 +208,13 @@ const styles = StyleSheet.create({
   formTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 8 },
   formLabel: { fontSize: 13, marginBottom: 4, marginTop: 8 },
   typeRow: { flexDirection: 'row', marginBottom: 8 },
-  typePill: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F0F0F0', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, marginRight: 8 },
+  typePill: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.grisClaro, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, marginRight: 8 },
   typeEmoji: { fontSize: 16, marginRight: 4 },
   typeLabel: { fontSize: 13 },
   amountInput2: { borderWidth: 1, borderRadius: 10, padding: 12, fontSize: 16, marginBottom: 4 },
   descInput: { borderWidth: 1, borderRadius: 10, padding: 12, marginBottom: 8, fontSize: 15 },
   addBtn: { paddingVertical: 12, borderRadius: 10, alignItems: 'center', marginTop: 8 },
-  addBtnText: { color: '#FFF', fontWeight: 'bold' },
+  addBtnText: { color: Colors.blanco, fontWeight: 'bold' },
   movementsSection: { padding: Spacing.md },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 12 },
   movementRow: { flexDirection: 'row', alignItems: 'center', padding: Spacing.md, borderRadius: BorderRadius.md, marginBottom: 8, borderWidth: 1 },

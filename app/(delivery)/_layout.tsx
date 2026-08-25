@@ -53,7 +53,7 @@ export default function DeliveryLayout() {
         tabBarStyle: styles.tabBar,
         tabBarLabelStyle: styles.tabBarLabel,
         headerStyle: { backgroundColor: Colors.azulInstitucional },
-        headerTintColor: '#FFFFFF',
+        headerTintColor: Colors.blanco,
         headerTitleStyle: { fontWeight: 'bold', fontSize: 18 },
         headerRight: () => (
           <View style={styles.headerRight}>
@@ -107,6 +107,7 @@ export default function DeliveryLayout() {
       <Tabs.Screen
         name="cash"
         options={{
+          href: null,
           title: 'Caja',
           headerTitle: '💰 Caja Delivery',
           tabBarIcon: ({ focused }) => <TabIcon emoji="💰" label="Caja" />,
@@ -115,6 +116,7 @@ export default function DeliveryLayout() {
       <Tabs.Screen
         name="users"
         options={{
+          href: null,
           title: 'Equipo',
           headerTitle: '👥 Equipo Delivery',
           tabBarIcon: ({ focused }) => <TabIcon emoji="👥" label="Equipo" />,
@@ -123,6 +125,7 @@ export default function DeliveryLayout() {
       <Tabs.Screen
         name="providers"
         options={{
+          href: null,
           title: 'Proveed.',
           headerTitle: '🏢 Proveedores',
           tabBarIcon: ({ focused }) => <TabIcon emoji="🏢" label="Proveed." />,
@@ -131,6 +134,7 @@ export default function DeliveryLayout() {
       <Tabs.Screen
         name="whatsapp-import"
         options={{
+          href: null,
           title: 'WhatsApp',
           headerTitle: '💬 Importar WhatsApp',
           tabBarIcon: ({ focused }) => <TabIcon emoji="💬" label="WhatsApp" />,
@@ -150,9 +154,9 @@ export default function DeliveryLayout() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.blanco,
     borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
+    borderTopColor: Colors.grisClaro,
     height: Platform.OS === 'ios' ? 88 : 64,
     paddingTop: 8,
     paddingBottom: Platform.OS === 'ios' ? 28 : 8,
@@ -173,7 +177,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 4,
   },
-  badgeText: { color: '#FFFFFF', fontSize: 10, fontWeight: 'bold' },
+  badgeText: { color: Colors.blanco, fontSize: 10, fontWeight: 'bold' },
   headerRight: { marginRight: 16, flexDirection: 'row', alignItems: 'center', gap: 8 },
   turnIndicator: {
     flexDirection: 'row',
@@ -190,5 +194,5 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   turnEmoji: { fontSize: 10, marginRight: 4 },
-  turnText: { color: '#FFFFFF', fontSize: 12, fontWeight: '600' },
+  turnText: { color: Colors.blanco, fontSize: 12, fontWeight: '600' },
 });

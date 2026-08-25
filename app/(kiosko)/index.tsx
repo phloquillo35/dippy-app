@@ -48,6 +48,7 @@ export default function KioskoHome() {
           { emoji: '💰', label: 'Caja', route: '/(kiosko)/cash' },
           { emoji: '👥', label: 'Equipo', route: '/(kiosko)/users' },
           { emoji: '🏢', label: 'Proveedores', route: '/(kiosko)/providers' },
+          { emoji: '⚖️', label: 'Ajustar stock', route: '/(kiosko)/stock' },
         ].map((item, i) => (
           <TouchableOpacity key={i} style={[styles.quickBtn, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => router.push(item.route)}>
             <Text style={styles.quickEmoji}>{item.emoji}</Text>

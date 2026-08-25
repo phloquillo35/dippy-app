@@ -256,7 +256,7 @@ const styles = StyleSheet.create({
   preferredText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#B8860B',
+    color: Colors.gold,
   },
   actionsRow: {
     flexDirection: 'row',
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   actionText: {
-    color: '#FFFFFF',
+    color: Colors.blanco,
     fontSize: 12,
     fontWeight: '600',
   },
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: Spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderBottomColor: Colors.grisClaro,
   },
   detailLabel: {
     fontSize: 14,

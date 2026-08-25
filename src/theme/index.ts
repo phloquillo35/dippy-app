@@ -17,6 +17,10 @@ export const Colors = {
   error: '#CD1719',
   advertencia: '#EE7203',
   info: '#00C8FF',
+  whatsappGreen: '#25D366',
+  gold: '#B8860B',
+  errorDark: '#A31515',
+  successDark: '#2D7A2D',
 } as const;
 
 export type ColorScheme = 'light' | 'dark';

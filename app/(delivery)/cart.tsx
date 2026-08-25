@@ -47,7 +47,7 @@ export default function DeliveryCartScreen() {
       <View style={styles.steps}>
         {['items', 'customer', 'confirm'].map((s, i) => (
           <TouchableOpacity key={s} style={[styles.stepDot, step === s && { backgroundColor: Colors.azulInstitucional }]} onPress={() => setStep(s as any)}>
-            <Text style={[styles.stepNum, step === s && { color: '#FFF' }]}>{i + 1}</Text>
+            <Text style={[styles.stepNum, step === s && { color: colors.textOnPrimary }]}>{i + 1}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -67,11 +67,11 @@ export default function DeliveryCartScreen() {
                   <Text style={{ color: colors.textSecondary, fontSize: 13 }}>${item.unitPrice.toLocaleString()} c/u</Text>
                 </View>
                 <View style={styles.qtyRow}>
-                  <TouchableOpacity style={[styles.qtyBtn, { backgroundColor: '#E0E0E0' }]} onPress={() => updateQuantity(item.id, item.quantity - 1)}>
+                  <TouchableOpacity style={[styles.qtyBtn, { backgroundColor: colors.border }]} onPress={() => updateQuantity(item.id, item.quantity - 1)}>
                     <Text>-</Text>
                   </TouchableOpacity>
                   <Text style={{ color: colors.textPrimary, marginHorizontal: 10, fontWeight: 'bold' }}>{item.quantity}</Text>
-                  <TouchableOpacity style={[styles.qtyBtn, { backgroundColor: '#E0E0E0' }]} onPress={() => updateQuantity(item.id, item.quantity + 1)}>
+                  <TouchableOpacity style={[styles.qtyBtn, { backgroundColor: colors.border }]} onPress={() => updateQuantity(item.id, item.quantity + 1)}>
                     <Text>+</Text>
                   </TouchableOpacity>
                 </View>
@@ -146,7 +146,7 @@ export default function DeliveryCartScreen() {
           />
 
           <View style={styles.navBtns}>
-            <TouchableOpacity style={[styles.navBtn, { backgroundColor: '#E0E0E0' }]} onPress={() => setStep('items')}>
+            <TouchableOpacity style={[styles.navBtn, { backgroundColor: colors.border }]} onPress={() => setStep('items')}>
               <Text>← Volver</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.navBtn, { backgroundColor: Colors.azulInstitucional }]} onPress={() => setStep('confirm')}>
@@ -187,7 +187,7 @@ export default function DeliveryCartScreen() {
             </View>
           </View>
 
-          <View style={[styles.totalCard, { backgroundColor: '#1A1A2E' }]}>
+          <View style={[styles.totalCard, { backgroundColor: Colors.negroSuave }]}>
             <Text style={styles.totalLabel}>Total</Text>
             <Text style={styles.totalValue}>{formatCurrency(getTotal())}</Text>
           </View>
@@ -200,7 +200,7 @@ export default function DeliveryCartScreen() {
           ) : null}
 
           <View style={styles.navBtns}>
-            <TouchableOpacity style={[styles.navBtn, { backgroundColor: '#E0E0E0' }]} onPress={() => setStep('customer')}>
+            <TouchableOpacity style={[styles.navBtn, { backgroundColor: colors.border }]} onPress={() => setStep('customer')}>
               <Text>← Volver</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.navBtn, { backgroundColor: Colors.exito }]} onPress={handleConfirm}>
@@ -216,8 +216,8 @@ export default function DeliveryCartScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   steps: { flexDirection: 'row', justifyContent: 'center', padding: Spacing.md, gap: 12 },
-  stepDot: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#E0E0E0', alignItems: 'center', justifyContent: 'center' },
-  stepNum: { fontWeight: 'bold', color: '#666' },
+  stepDot: { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.grisClaro, alignItems: 'center', justifyContent: 'center' },
+  stepNum: { fontWeight: 'bold', color: Colors.grisOscuro },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', marginHorizontal: Spacing.md, marginBottom: 8 },
   list: { padding: Spacing.md, paddingBottom: 80 },
   cartItem: { flexDirection: 'row', alignItems: 'center', padding: Spacing.md, borderRadius: BorderRadius.lg, marginBottom: 8, borderWidth: 1 },
@@ -227,18 +227,18 @@ const styles = StyleSheet.create({
   emptyEmoji: { fontSize: 48 },
   emptyText: { fontSize: 14, marginTop: 8 },
   nextBtn: { margin: Spacing.md, padding: 14, borderRadius: 12, alignItems: 'center' },
-  nextBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
+  nextBtnText: { color: Colors.blanco, fontWeight: 'bold', fontSize: 16 },
   form: { padding: Spacing.md, paddingBottom: 40 },
   label: { fontSize: 13, marginBottom: 4, marginTop: 12 },
   input: { borderWidth: 1, borderRadius: 10, padding: 12, fontSize: 16, marginBottom: 4 },
   notesInput: { height: 80, textAlignVertical: 'top' },
   navBtns: { flexDirection: 'row', gap: 12, marginTop: 20 },
   navBtn: { flex: 1, padding: 14, borderRadius: 12, alignItems: 'center' },
-  navBtnText: { color: '#FFF', fontWeight: 'bold' },
+  navBtnText: { color: Colors.blanco, fontWeight: 'bold' },
   summaryCard: { padding: Spacing.md, borderRadius: BorderRadius.lg, marginBottom: 12, borderWidth: 1 },
   summaryTitle: { fontSize: 14, fontWeight: 'bold', marginBottom: 6 },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 },
   totalCard: { padding: Spacing.lg, borderRadius: BorderRadius.xl, alignItems: 'center', marginBottom: 16 },
-  totalLabel: { color: '#AAA', fontSize: 14 },
-  totalValue: { color: '#FFF', fontSize: 28, fontWeight: 'bold' },
+  totalLabel: { color: Colors.grisMedio, fontSize: 14 },
+  totalValue: { color: Colors.blanco, fontSize: 28, fontWeight: 'bold' },
 });

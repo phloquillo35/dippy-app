@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: Colors.grisClaro,
   },
   priceItem: {
     alignItems: 'center',

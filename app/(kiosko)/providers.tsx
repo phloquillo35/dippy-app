@@ -88,7 +88,7 @@ export function ProvidersList({ businessId, accentColor = Colors.celesteInstituc
             style={[styles.categoryChip, { backgroundColor: selectedCategory === item.key ? accentColor : colors.card }]}
             onPress={() => setSelectedCategory(item.key)}
           >
-            <Text style={[styles.categoryLabel, { color: selectedCategory === item.key ? '#FFF' : colors.textPrimary }]}>{item.label}</Text>
+            <Text style={[styles.categoryLabel, { color: selectedCategory === item.key ? colors.textOnPrimary : colors.textPrimary }]}>{item.label}</Text>
           </TouchableOpacity>
         )}
       />
@@ -160,16 +160,16 @@ export function ProvidersList({ businessId, accentColor = Colors.celesteInstituc
               {PAYMENT_METHODS.map(p => (
                 <TouchableOpacity key={p.key} style={[styles.methodPill, paymentMethod === p.key && { backgroundColor: accentColor }]} onPress={() => setPaymentMethod(p.key)}>
                   <Text style={styles.methodEmoji}>{p.emoji}</Text>
-                  <Text style={[styles.methodLabel, paymentMethod === p.key && { color: '#FFF' }]}>{p.label}</Text>
+                  <Text style={[styles.methodLabel, paymentMethod === p.key && { color: colors.textOnPrimary }]}>{p.label}</Text>
                 </TouchableOpacity>
               ))}
             </View>
             <View style={styles.modalActions}>
-              <TouchableOpacity style={[styles.modalBtn, { backgroundColor: '#E0E0E0' }]} onPress={() => setPaymentModalVisible(false)}>
+              <TouchableOpacity style={[styles.modalBtn, { backgroundColor: colors.border }]} onPress={() => setPaymentModalVisible(false)}>
                 <Text>Cancelar</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.modalBtn, { backgroundColor: accentColor }]} onPress={handleConfirmPayment}>
-                <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Confirmar</Text>
+                <Text style={{ color: colors.textOnPrimary, fontWeight: 'bold' }}>Confirmar</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
   ratingText: { fontSize: 14 },
   providerInfo: { gap: 4 },
   payBtn: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 10, marginTop: 12, alignSelf: 'flex-start' },
-  payBtnText: { color: '#FFF', fontWeight: 'bold' },
+  payBtnText: { color: Colors.blanco, fontWeight: 'bold' },
   empty: { alignItems: 'center', marginTop: 60 },
   emptyEmoji: { fontSize: 48 },
   emptyText: { fontSize: 16, marginTop: 12 },
@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
   modalLabel: { fontSize: 13, marginBottom: 4, marginTop: 8 },
   modalInput: { borderWidth: 1, borderRadius: 10, padding: 12, fontSize: 16, marginBottom: 4 },
   paymentMethodsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
-  methodPill: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F0F0F0', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20 },
+  methodPill: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.grisClaro, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20 },
   methodEmoji: { fontSize: 14, marginRight: 4 },
   methodLabel: { fontSize: 13 },
   modalActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12, marginTop: 20 },

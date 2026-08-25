@@ -68,12 +68,12 @@ export default function DeliveryProductDetail() {
         <View style={styles.qtySection}>
           <Text style={[styles.qtyLabel, { color: colors.textSecondary }]}>Cantidad (max: {maxQty})</Text>
           <View style={styles.qtyRow}>
-            <TouchableOpacity style={[styles.qtyBtn, { backgroundColor: '#E0E0E0' }]} onPress={() => setQty(Math.max(1, qty - 1))}>
+            <TouchableOpacity style={[styles.qtyBtn, { backgroundColor: colors.border }]} onPress={() => setQty(Math.max(1, qty - 1))}>
               <Text style={{ fontSize: 18 }}>-</Text>
             </TouchableOpacity>
             <Text style={[styles.qtyValue, { color: colors.textPrimary }]}>{qty}</Text>
             <TouchableOpacity
-              style={[styles.qtyBtn, { backgroundColor: '#E0E0E0' }]}
+              style={[styles.qtyBtn, { backgroundColor: colors.border }]}
               onPress={() => { if (qty < maxQty) setQty(qty + 1); }}
             >
               <Text style={{ fontSize: 18 }}>+</Text>
@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
   qtyBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   qtyValue: { fontSize: 24, fontWeight: 'bold', minWidth: 40, textAlign: 'center' },
   addBtn: { paddingVertical: 16, borderRadius: 12, alignItems: 'center' },
-  addBtnText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
-  outOfStockBtn: { paddingVertical: 16, borderRadius: 12, alignItems: 'center', backgroundColor: '#F0F0F0' },
-  outOfStockText: { color: '#999', fontSize: 16, fontWeight: 'bold' },
+  addBtnText: { color: Colors.blanco, fontSize: 16, fontWeight: 'bold' },
+  outOfStockBtn: { paddingVertical: 16, borderRadius: 12, alignItems: 'center', backgroundColor: Colors.grisClaro },
+  outOfStockText: { color: Colors.grisMedio, fontSize: 16, fontWeight: 'bold' },
 });

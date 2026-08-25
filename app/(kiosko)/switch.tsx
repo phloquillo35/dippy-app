@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { useBusinessStore } from '@/store/businessStore';
 import { useUserStore } from '@/store/userStore';
 import { useColors } from '@/theme/ThemeProvider';
+import { Colors } from '@/theme';
 
 export default function SwitchScreen() {
   const colors = useColors();
@@ -52,7 +53,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 12,
   },
-  primaryBtnText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
+  primaryBtnText: { color: Colors.blanco, fontSize: 16, fontWeight: 'bold' },
   secondaryBtn: { padding: 12 },
   secondaryBtnText: { fontSize: 14 },
 });

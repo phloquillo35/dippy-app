@@ -58,14 +58,14 @@ export const Button = ({
       case 'primary':
       case 'danger':
       case 'success':
-        return '#FFFFFF';
+        return Colors.blanco;
       case 'secondary':
         return colors.textOnPrimary;
       case 'outline':
       case 'ghost':
         return colors.primary;
       default:
-        return '#FFFFFF';
+        return Colors.blanco;
     }
   };
 
@@ -78,9 +78,9 @@ export const Button = ({
       case 'secondary':
         return Gradients.buttonSecondary;
       case 'danger':
-        return [Colors.error, '#A31515'];
+        return [Colors.error, Colors.errorDark];
       case 'success':
-        return [Colors.exito, '#2D7A2D'];
+        return [Colors.exito, Colors.successDark];
       default:
         return [colors.background, colors.background];
     }

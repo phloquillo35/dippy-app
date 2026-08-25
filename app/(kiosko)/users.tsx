@@ -118,7 +118,7 @@ export default function KioskoUsersScreen() {
                 <View style={styles.turnStats}>
                   <Text style={{ color: Colors.exito }}>💰 ${(t.totalSales || 0).toLocaleString()}</Text>
                   <Text style={{ color: colors.textSecondary }}>📦 {t.totalOrders || 0} pedidos</Text>
-                  <Text style={{ color: '#999', fontSize: 11 }}>{formatDateTime(t.startTime)}</Text>
+                  <Text style={{ color: colors.placeholder, fontSize: 11 }}>{formatDateTime(t.startTime)}</Text>
                 </View>
               </View>
             ))}
@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   turnBtns: { flexDirection: 'row', gap: 6, marginTop: 12 },
   turnBtn: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center' },
   endTurnBtn: { marginTop: 12, paddingVertical: 12, borderRadius: 10, alignItems: 'center' },
-  turnBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 13 },
+  turnBtnText: { color: Colors.blanco, fontWeight: 'bold', fontSize: 13 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 12 },
   userCard: { flexDirection: 'row', alignItems: 'center', padding: Spacing.md, borderRadius: BorderRadius.lg, marginBottom: 8, borderWidth: 1 },
   footer: { marginTop: Spacing.xl },

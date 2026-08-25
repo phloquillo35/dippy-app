@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { useBusinessStore } from '@/store/businessStore';
 import { useUserStore } from '@/store/userStore';
 import { useColors } from '@/theme/ThemeProvider';
+import { Colors } from '@/theme';
 
 export default function SwitchScreenDelivery() {
   const colors = useColors();
@@ -30,7 +31,7 @@ export default function SwitchScreenDelivery() {
         Volvé al selector para elegir otro negocio
       </Text>
 
-      <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: '#0096DC' }]} onPress={handleSwitch}>
+      <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: Colors.azulInstitucional }]} onPress={handleSwitch}>
         <Text style={styles.primaryBtnText}>Cambiar negocio</Text>
       </TouchableOpacity>
 
@@ -52,7 +53,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 12,
   },
-  primaryBtnText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
+  primaryBtnText: { color: Colors.blanco, fontSize: 16, fontWeight: 'bold' },
   secondaryBtn: { padding: 12 },
   secondaryBtnText: { fontSize: 14 },
 });

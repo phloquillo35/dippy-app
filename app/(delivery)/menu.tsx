@@ -52,7 +52,7 @@ export default function DeliveryMenuScreen() {
                 {item.stock > 0 ? `Stock: ${item.stock}` : 'Agotado'}
               </Text>
             </View>
-            <Text style={[styles.itemPrice, { color: item.stock > 0 ? Colors.exito : '#999' }]}>${item.salePrice.toLocaleString()}</Text>
+            <Text style={[styles.itemPrice, { color: item.stock > 0 ? Colors.exito : colors.placeholder }]}>${item.salePrice.toLocaleString()}</Text>
           </TouchableOpacity>
         )}
         ListFooterComponent={
@@ -80,5 +80,5 @@ const styles = StyleSheet.create({
   itemEmoji: { fontSize: 36 },
   itemName: { fontSize: 16, fontWeight: '600' },
   itemPrice: { fontSize: 16, fontWeight: 'bold' },
-  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: Spacing.lg, borderTopWidth: 2, borderTopColor: '#E0E0E0', alignItems: 'center' },
+  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: Spacing.lg, borderTopWidth: 2, borderTopColor: Colors.grisClaro, alignItems: 'center' },
 });

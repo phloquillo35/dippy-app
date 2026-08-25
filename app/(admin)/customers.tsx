@@ -58,7 +58,7 @@ export default function AdminCustomersScreen() {
               <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>📍 {item.address}</Text>
             ) : null}
             {item.lastOrderAt ? (
-              <Text style={{ color: '#999', fontSize: 11, marginTop: 2 }}>Último pedido: {new Date(item.lastOrderAt).toLocaleDateString('es-AR')}</Text>
+              <Text style={{ color: colors.placeholder, fontSize: 11, marginTop: 2 }}>Último pedido: {new Date(item.lastOrderAt).toLocaleDateString('es-AR')}</Text>
             ) : null}
           </View>
         )}

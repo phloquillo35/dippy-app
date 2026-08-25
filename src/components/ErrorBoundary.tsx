@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Colors } from '@/theme';
 
 interface Props {
   children: React.ReactNode;
@@ -50,17 +51,17 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F5F5F5',
+    backgroundColor: Colors.grisClaro,
     padding: 24,
   },
   emoji: { fontSize: 64, marginBottom: 16 },
-  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 8, color: '#333' },
-  message: { fontSize: 14, color: '#666', textAlign: 'center', marginBottom: 24, lineHeight: 20 },
+  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 8, color: Colors.negro },
+  message: { fontSize: 14, color: Colors.grisOscuro, textAlign: 'center', marginBottom: 24, lineHeight: 20 },
   retryBtn: {
-    backgroundColor: '#00C8FF',
+    backgroundColor: Colors.celesteInstitucional,
     paddingHorizontal: 32,
     paddingVertical: 14,
     borderRadius: 12,
   },
-  retryText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
+  retryText: { color: Colors.blanco, fontSize: 16, fontWeight: 'bold' },
 });

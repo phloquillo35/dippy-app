@@ -203,7 +203,7 @@ export const CartItemCard = ({
               style={[styles.qtyButton, { backgroundColor: colors.primary }]}
               onPress={() => onQuantityChange(quantity + 1)}
             >
-              <Text style={[styles.qtyButtonText, { color: '#FFFFFF' }]}>+</Text>
+              <Text style={[styles.qtyButtonText, { color: colors.textOnPrimary }]}>+</Text>
             </TouchableOpacity>
           </View>
 

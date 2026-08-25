@@ -97,7 +97,7 @@ export default function AddKioskoProductScreen() {
           {CATS.map(c => (
             <TouchableOpacity key={c} style={[styles.chip, { backgroundColor: cat === c ? Colors.celesteInstitucional : colors.card }]} onPress={() => setCat(c)}>
               <Text>{CAT_EMOJIS[c]}</Text>
-              <Text style={[styles.chipLabel, { color: cat === c ? '#FFF' : colors.textPrimary }]}>{CAT_LABELS[c]}</Text>
+              <Text style={[styles.chipLabel, { color: cat === c ? colors.textOnPrimary : colors.textPrimary }]}>{CAT_LABELS[c]}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -108,7 +108,7 @@ export default function AddKioskoProductScreen() {
         <View style={styles.chips}>
           {(['unidad','kg','g','l','ml'] as const).map(u => (
             <TouchableOpacity key={u} style={[styles.chip, { backgroundColor: unit === u ? Colors.celesteInstitucional : colors.card }]} onPress={() => setUnit(u)}>
-              <Text style={[styles.chipLabel, { color: unit === u ? '#FFF' : colors.textPrimary }]}>{u}</Text>
+              <Text style={[styles.chipLabel, { color: unit === u ? colors.textOnPrimary : colors.textPrimary }]}>{u}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -116,7 +116,7 @@ export default function AddKioskoProductScreen() {
 
       <View style={[styles.toggleRow, { marginHorizontal: 16 }]}>
         <Text style={[styles.toggleLabel, { color: colors.textPrimary }]}>⚖️ Producto por peso</Text>
-        <TouchableOpacity style={[styles.toggle, { backgroundColor: isWeight ? Colors.celesteInstitucional : '#E0E0E0' }]} onPress={() => setIsWeight(!isWeight)}>
+        <TouchableOpacity style={[styles.toggle, { backgroundColor: isWeight ? Colors.celesteInstitucional : colors.border }]} onPress={() => setIsWeight(!isWeight)}>
           <Text style={styles.toggleText}>{isWeight ? 'ON' : 'OFF'}</Text>
         </TouchableOpacity>
       </View>
@@ -152,9 +152,9 @@ const styles = StyleSheet.create({
   toggleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16 },
   toggleLabel: { fontSize: 14, fontWeight: '500', flex: 1 },
   toggle: { width: 56, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
-  toggleText: { fontSize: 12, fontWeight: 'bold', color: '#FFF' },
+  toggleText: { fontSize: 12, fontWeight: 'bold', color: Colors.blanco },
   actions: { padding: 16, gap: 12, paddingBottom: 40 },
   saveBtn: { padding: 14, borderRadius: 12, alignItems: 'center' },
-  saveBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
+  saveBtnText: { color: Colors.blanco, fontWeight: 'bold', fontSize: 16 },
   cancelBtn: { padding: 14, alignItems: 'center' },
 });

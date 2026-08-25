@@ -31,7 +31,7 @@ export default function OnboardingScreen() {
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
       <View style={styles.progressBar}>
         {STEPS.map((s, i) => (
-          <View key={s} style={[styles.progressDot, { backgroundColor: i <= stepIndex ? Colors.celesteInstitucional : '#E0E0E0' }]} />
+          <View key={s} style={[styles.progressDot, { backgroundColor: i <= stepIndex ? Colors.celesteInstitucional : colors.border }]} />
         ))}
       </View>
 
@@ -171,6 +171,6 @@ const styles = StyleSheet.create({
   readyTitle: { fontSize: 15, fontWeight: 'bold', marginBottom: 8 },
   readyText: { fontSize: 13, lineHeight: 22 },
   nextBtn: { width: '100%', padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 8 },
-  nextBtnText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
+  nextBtnText: { color: Colors.blanco, fontSize: 16, fontWeight: 'bold' },
   backBtn: { alignSelf: 'center', marginTop: 16, padding: 12 },
 });

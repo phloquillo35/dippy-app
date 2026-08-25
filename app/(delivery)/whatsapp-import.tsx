@@ -53,7 +53,7 @@ export default function WhatsAppImportScreen() {
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]} keyboardShouldPersistTaps="handled">
-      <View style={[styles.headerCard, { backgroundColor: '#25D366' }]}>
+      <View style={[styles.headerCard, { backgroundColor: Colors.whatsappGreen }]}>
         <Text style={styles.headerEmoji}>💬</Text>
         <Text style={styles.headerTitle}>Importar desde WhatsApp</Text>
         <Text style={styles.headerDesc}>Copiá el mensaje del cliente y pegalo aquí</Text>
@@ -70,7 +70,7 @@ export default function WhatsAppImportScreen() {
         onChangeText={setMessage}
       />
 
-      <TouchableOpacity style={[styles.parseBtn, { backgroundColor: '#25D366' }]} onPress={handleParse}>
+      <TouchableOpacity style={[styles.parseBtn, { backgroundColor: Colors.whatsappGreen }]} onPress={handleParse}>
         <Text style={styles.parseBtnText}>🔍 Detectar productos</Text>
       </TouchableOpacity>
 
@@ -88,7 +88,7 @@ export default function WhatsAppImportScreen() {
           <Text style={[styles.previewText, { color: colors.textPrimary }]}>{formatOrderPreview(parsed)}</Text>
 
           {parsed.items.length > 0 && (
-            <TouchableOpacity style={[styles.importBtn, { backgroundColor: '#25D366' }]} onPress={handleImport}>
+            <TouchableOpacity style={[styles.importBtn, { backgroundColor: Colors.whatsappGreen }]} onPress={handleImport}>
               <Text style={styles.importBtnText}>
                 ✅ Importar {parsed.items.length} productos al carrito
               </Text>
@@ -111,19 +111,19 @@ const styles = StyleSheet.create({
   container: { flex: 1, padding: Spacing.md },
   headerCard: { padding: Spacing.lg, borderRadius: BorderRadius.xl, alignItems: 'center', marginBottom: Spacing.xl },
   headerEmoji: { fontSize: 48, marginBottom: 8 },
-  headerTitle: { color: '#FFF', fontSize: 20, fontWeight: 'bold' },
-  headerDesc: { color: '#FFF', fontSize: 13, opacity: 0.9, marginTop: 4 },
+  headerTitle: { color: Colors.blanco, fontSize: 20, fontWeight: 'bold' },
+  headerDesc: { color: Colors.blanco, fontSize: 13, opacity: 0.9, marginTop: 4 },
   label: { fontSize: 13, marginBottom: 6, marginTop: 8 },
   textArea: { borderWidth: 1, borderRadius: 12, padding: 14, fontSize: 15, height: 160, textAlignVertical: 'top', marginBottom: 12 },
   parseBtn: { padding: 14, borderRadius: 12, alignItems: 'center', marginBottom: 16 },
-  parseBtnText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
+  parseBtnText: { color: Colors.blanco, fontSize: 16, fontWeight: 'bold' },
   previewCard: { padding: Spacing.lg, borderRadius: BorderRadius.xl, borderWidth: 2, marginBottom: 16 },
   previewHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   previewTitle: { fontSize: 16, fontWeight: 'bold' },
   confidenceBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
   previewText: { fontSize: 14, lineHeight: 22, marginBottom: 12 },
   importBtn: { padding: 14, borderRadius: 12, alignItems: 'center' },
-  importBtnText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
+  importBtnText: { color: Colors.blanco, fontSize: 16, fontWeight: 'bold' },
   helpCard: { padding: Spacing.md, borderRadius: BorderRadius.lg, borderWidth: 1, marginTop: 8 },
   helpTitle: { fontSize: 14, fontWeight: 'bold', marginBottom: 8 },
 });

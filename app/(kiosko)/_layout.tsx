@@ -51,7 +51,7 @@ export default function KioskoLayout() {
         tabBarStyle: styles.tabBar,
         tabBarLabelStyle: styles.tabBarLabel,
         headerStyle: { backgroundColor: Colors.celesteInstitucional },
-        headerTintColor: '#FFFFFF',
+        headerTintColor: Colors.blanco,
         headerTitleStyle: { fontWeight: 'bold', fontSize: 18 },
         headerRight: () => (
           <View style={styles.headerRight}>
@@ -105,6 +105,7 @@ export default function KioskoLayout() {
       <Tabs.Screen
         name="users"
         options={{
+          href: null,
           title: 'Equipo',
           headerTitle: '👥 Equipo Kiosko',
           tabBarIcon: ({ focused }) => <TabIcon emoji="👥" label="Equipo" />,
@@ -113,6 +114,7 @@ export default function KioskoLayout() {
       <Tabs.Screen
         name="providers"
         options={{
+          href: null,
           title: 'Proveed.',
           headerTitle: '🏢 Proveedores',
           tabBarIcon: ({ focused }) => <TabIcon emoji="🏢" label="Proveed." />,
@@ -121,6 +123,7 @@ export default function KioskoLayout() {
       <Tabs.Screen
         name="stock"
         options={{
+          href: null,
           title: 'Ajustar',
           headerTitle: '⚖️ Ajuste de Stock',
           tabBarIcon: ({ focused }) => <TabIcon emoji="⚖️" label="Ajustar" />,
@@ -140,9 +143,9 @@ export default function KioskoLayout() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.blanco,
     borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
+    borderTopColor: Colors.grisClaro,
     height: Platform.OS === 'ios' ? 88 : 64,
     paddingTop: 8,
     paddingBottom: Platform.OS === 'ios' ? 28 : 8,
@@ -163,7 +166,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 4,
   },
-  badgeText: { color: '#FFFFFF', fontSize: 10, fontWeight: 'bold' },
+  badgeText: { color: Colors.blanco, fontSize: 10, fontWeight: 'bold' },
   headerRight: { marginRight: 16, flexDirection: 'row', alignItems: 'center', gap: 8 },
   turnIndicator: {
     flexDirection: 'row',
@@ -180,5 +183,5 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   turnEmoji: { fontSize: 10, marginRight: 4 },
-  turnText: { color: '#FFFFFF', fontSize: 12, fontWeight: '600' },
+  turnText: { color: Colors.blanco, fontSize: 12, fontWeight: '600' },
 });

@@ -36,7 +36,7 @@ export default function AdminDashboard() {
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.consolidatedCard, { backgroundColor: '#1A1A2E' }]}>
+      <View style={[styles.consolidatedCard, { backgroundColor: Colors.negroSuave }]}>
         <Text style={styles.consolidatedTitle}>📊 Resumen del día</Text>
         <View style={styles.consolidatedRow}>
           <View style={styles.consolidatedStat}>
@@ -61,7 +61,7 @@ export default function AdminDashboard() {
           </View>
           <View style={styles.consolidatedStat}>
             <Text style={styles.consolidatedLabel}>Pedidos totales</Text>
-            <Text style={[styles.consolidatedValue, { color: '#FFF' }]}>
+            <Text style={[styles.consolidatedValue, { color: colors.textOnPrimary }]}>
               {kioskoOrders.length + deliveryOrders.length}
             </Text>
           </View>
@@ -202,10 +202,10 @@ export default function AdminDashboard() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   consolidatedCard: { margin: Spacing.md, padding: Spacing.lg, borderRadius: BorderRadius.xl },
-  consolidatedTitle: { color: '#FFF', fontSize: 18, fontWeight: 'bold', marginBottom: 16 },
+  consolidatedTitle: { color: Colors.blanco, fontSize: 18, fontWeight: 'bold', marginBottom: 16 },
   consolidatedRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
   consolidatedStat: { flex: 1, alignItems: 'center' },
-  consolidatedLabel: { color: '#AAA', fontSize: 12, marginBottom: 4 },
+  consolidatedLabel: { color: Colors.grisMedio, fontSize: 12, marginBottom: 4 },
   consolidatedValue: { fontSize: 20, fontWeight: 'bold' },
   section: { padding: Spacing.md },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 12 },

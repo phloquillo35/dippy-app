@@ -59,7 +59,7 @@ export default function AddProviderScreen() {
           {CATS.map(c => (
             <TouchableOpacity key={c} style={[styles.chip, { backgroundColor: cats.includes(c) ? colors.primary : colors.surfaceVariant }]} onPress={() => toggle(c)}>
               <Text style={{ fontSize: 14 }}>{CAT_EMOJIS[c]}</Text>
-              <Text style={[styles.chipLabel, { color: cats.includes(c) ? '#FFF' : colors.textPrimary }]}>{CAT_LABELS[c]}</Text>
+              <Text style={[styles.chipLabel, { color: cats.includes(c) ? colors.textOnPrimary : colors.textPrimary }]}>{CAT_LABELS[c]}</Text>
             </TouchableOpacity>
           ))}
         </View>

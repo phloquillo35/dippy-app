@@ -107,7 +107,7 @@ export default function AddProductScreen() {
           {CATS.map(c => (
             <TouchableOpacity key={c} style={[styles.chip, { backgroundColor: cat === c ? colors.primary : colors.surfaceVariant }]} onPress={() => setCat(c)}>
               <Text>{CAT_EMOJIS[c]}</Text>
-              <Text style={[styles.chipLabel, { color: cat === c ? '#FFF' : colors.textPrimary }]}>{CAT_LABELS[c]}</Text>
+              <Text style={[styles.chipLabel, { color: cat === c ? colors.textOnPrimary : colors.textPrimary }]}>{CAT_LABELS[c]}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -119,7 +119,7 @@ export default function AddProductScreen() {
         <View style={styles.chips}>
           {(['unidad','kg','g','l','ml'] as const).map(u => (
             <TouchableOpacity key={u} style={[styles.chip, { backgroundColor: unit === u ? colors.primary : colors.surfaceVariant }]} onPress={() => setUnit(u)}>
-              <Text style={[styles.chipLabel, { color: unit === u ? '#FFF' : colors.textPrimary }]}>{u}</Text>
+              <Text style={[styles.chipLabel, { color: unit === u ? colors.textOnPrimary : colors.textPrimary }]}>{u}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -129,7 +129,7 @@ export default function AddProductScreen() {
       <View style={[styles.toggleRow, { marginHorizontal: 16 }]}>
         <Text style={[styles.toggleLabel, { color: colors.textPrimary }]}>⚖️ Producto por peso (100g, 200g...)</Text>
         <TouchableOpacity style={[styles.toggle, { backgroundColor: isWeight ? colors.primary : colors.surfaceVariant }]} onPress={() => setIsWeight(!isWeight)}>
-          <Text style={[styles.toggleText, { color: '#FFF' }]}>{isWeight ? 'ON' : 'OFF'}</Text>
+          <Text style={[styles.toggleText, { color: colors.textOnPrimary }]}>{isWeight ? 'ON' : 'OFF'}</Text>
         </TouchableOpacity>
       </View>
 

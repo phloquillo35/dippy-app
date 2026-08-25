@@ -90,7 +90,7 @@ export default function AddDeliveryProductScreen() {
           {CATS.map(c => (
             <TouchableOpacity key={c} style={[styles.chip, { backgroundColor: cat === c ? Colors.azulInstitucional : colors.card }]} onPress={() => setCat(c)}>
               <Text>{CAT_EMOJIS[c]}</Text>
-              <Text style={[styles.chipLabel, { color: cat === c ? '#FFF' : colors.textPrimary }]}>{CAT_LABELS[c]}</Text>
+              <Text style={[styles.chipLabel, { color: cat === c ? colors.textOnPrimary : colors.textPrimary }]}>{CAT_LABELS[c]}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -126,6 +126,6 @@ const styles = StyleSheet.create({
   chipLabel: { fontSize: 13, fontWeight: '600' },
   actions: { padding: 16, gap: 12, paddingBottom: 40 },
   saveBtn: { padding: 14, borderRadius: 12, alignItems: 'center' },
-  saveBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
+  saveBtnText: { color: Colors.blanco, fontWeight: 'bold', fontSize: 16 },
   cancelBtn: { padding: 14, alignItems: 'center' },
 });

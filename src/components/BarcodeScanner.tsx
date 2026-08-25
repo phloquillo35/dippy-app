@@ -174,7 +174,7 @@ export const BarcodeScanner = ({ onScan, onClose, isActive = true }: BarcodeScan
         </View>
 
         <View style={styles.bottomOverlay}>
-          <Text style={[styles.scannerText, { color: '#FFFFFF' }]}>
+          <Text style={[styles.scannerText, { color: Colors.blanco }]}>
             {scanned ? '✅ ¡Código escaneado!' : '📱 Apuntá al código de barras'}
           </Text>
 
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(58, 170, 53, 0.9)',
   },
   checkmark: {
-    color: '#FFFFFF',
+    color: Colors.blanco,
     fontSize: 28,
     fontWeight: 'bold',
   },
@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   controlLabel: {
-    color: '#FFFFFF',
+    color: Colors.blanco,
     fontSize: 12,
   },
   emoji: {

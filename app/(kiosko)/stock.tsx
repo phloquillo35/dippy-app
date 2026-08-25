@@ -138,7 +138,7 @@ export default function KioskoStockScreen() {
                 onPress={() => setAdjustType(t.key as any)}
               >
                 <Text>{t.emoji}</Text>
-                <Text style={[styles.typeBtnText, adjustType === t.key && { color: '#FFF' }]}>{t.label}</Text>
+                <Text style={[styles.typeBtnText, adjustType === t.key && { color: colors.textOnPrimary }]}>{t.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -197,16 +197,16 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 8 },
   productRow: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 12, marginBottom: 8, borderWidth: 1 },
   lowStockBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
-  adjustPanel: { padding: Spacing.md, borderTopWidth: 2, borderTopColor: '#E0E0E0' },
+  adjustPanel: { padding: Spacing.md, borderTopWidth: 2, borderTopColor: Colors.grisClaro },
   adjustHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
   typeRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
-  typeBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, padding: 10, borderRadius: 10, backgroundColor: '#F0F0F0' },
+  typeBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, padding: 10, borderRadius: 10, backgroundColor: Colors.grisClaro },
   typeBtnText: { fontSize: 13, fontWeight: '600' },
   inputLabel: { fontSize: 12, marginBottom: 4 },
   qtyInput: { borderWidth: 1, borderRadius: 10, padding: 12, fontSize: 18, fontWeight: 'bold', marginBottom: 8 },
   reasonInput: { borderWidth: 1, borderRadius: 10, padding: 12, fontSize: 14, marginBottom: 12 },
   adjustBtn: { padding: 14, borderRadius: 12, alignItems: 'center' },
-  adjustBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 15 },
+  adjustBtnText: { color: Colors.blanco, fontWeight: 'bold', fontSize: 15 },
   movementsSection: { padding: Spacing.md },
   movementRow: { flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 10, marginBottom: 6, borderWidth: 1 },
 });

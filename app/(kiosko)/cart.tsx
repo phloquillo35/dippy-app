@@ -106,11 +106,11 @@ export default function KioskoCartScreen() {
               <Text style={{ color: colors.textSecondary, fontSize: 13 }}>${item.unitPrice.toLocaleString()} c/u</Text>
             </View>
             <View style={styles.quantityRow}>
-              <TouchableOpacity style={[styles.qtyBtn, { backgroundColor: '#E0E0E0' }]} onPress={() => { updateQuantity(item.id, item.quantity - 1); hapticMedium(); }}>
+              <TouchableOpacity style={[styles.qtyBtn, { backgroundColor: colors.border }]} onPress={() => { updateQuantity(item.id, item.quantity - 1); hapticMedium(); }}>
                 <Text>-</Text>
               </TouchableOpacity>
               <Text style={{ color: colors.textPrimary, marginHorizontal: 12, fontWeight: 'bold' }}>{item.quantity}</Text>
-              <TouchableOpacity style={[styles.qtyBtn, { backgroundColor: '#E0E0E0' }]} onPress={() => { updateQuantity(item.id, item.quantity + 1); hapticMedium(); }}>
+              <TouchableOpacity style={[styles.qtyBtn, { backgroundColor: colors.border }]} onPress={() => { updateQuantity(item.id, item.quantity + 1); hapticMedium(); }}>
                 <Text>+</Text>
               </TouchableOpacity>
             </View>
@@ -136,7 +136,7 @@ export default function KioskoCartScreen() {
               onChangeText={setCouponCode}
             />
             <TouchableOpacity style={[styles.couponBtn, { backgroundColor: appliedCoupon ? Colors.exito : Colors.celesteInstitucional }]} onPress={handleApplyCoupon}>
-              <Text style={{ color: '#FFF', fontWeight: 'bold' }}>{appliedCoupon ? '✓' : 'OK'}</Text>
+              <Text style={{ color: colors.textOnPrimary, fontWeight: 'bold' }}>{appliedCoupon ? '✓' : 'OK'}</Text>
             </TouchableOpacity>
           </View>
 
@@ -170,7 +170,7 @@ export default function KioskoCartScreen() {
           </View>
 
           <TouchableOpacity
-            style={[styles.sellBtn, { backgroundColor: !paymentMethod ? '#CCC' : Colors.exito }]}
+            style={[styles.sellBtn, { backgroundColor: !paymentMethod ? Colors.grisMedio : Colors.exito }]}
             disabled={!paymentMethod}
             onPress={() => {
               if (!paymentMethod) return;
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
   searchBar: { flexDirection: 'row', alignItems: 'center', margin: Spacing.md, paddingHorizontal: Spacing.md, borderRadius: BorderRadius.lg, borderWidth: 1, gap: 8 },
   searchInput: { flex: 1, height: 44, fontSize: 16 },
   productList: { marginHorizontal: Spacing.md, borderRadius: BorderRadius.lg, borderWidth: 1, overflow: 'hidden' },
-  productItem: { flexDirection: 'row', alignItems: 'center', padding: 12, borderBottomWidth: 1, borderBottomColor: '#E0E0E0' },
+  productItem: { flexDirection: 'row', alignItems: 'center', padding: 12, borderBottomWidth: 1, borderBottomColor: Colors.grisClaro },
   cartTitle: { fontSize: 18, fontWeight: 'bold', marginHorizontal: Spacing.md, marginBottom: 8 },
   cartList: { padding: Spacing.md, paddingBottom: 300 },
   cartItem: { flexDirection: 'row', alignItems: 'center', padding: Spacing.md, borderRadius: BorderRadius.lg, marginBottom: 8, borderWidth: 1 },
@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
   empty: { alignItems: 'center', marginTop: 60 },
   emptyEmoji: { fontSize: 48 },
   emptyText: { fontSize: 14, marginTop: 8 },
-  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: Spacing.lg, borderTopWidth: 2, borderTopColor: '#E0E0E0' },
+  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: Spacing.lg, borderTopWidth: 2, borderTopColor: Colors.grisClaro },
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
   couponRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
   couponInput: { flex: 1, borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, fontSize: 13 },
@@ -224,5 +224,5 @@ const styles = StyleSheet.create({
   payBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, borderWidth: 1, gap: 4 },
   payEmoji: { fontSize: 14 },
   sellBtn: { paddingVertical: 14, borderRadius: 12, alignItems: 'center', marginTop: 10 },
-  sellBtnText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
+  sellBtnText: { color: Colors.blanco, fontSize: 18, fontWeight: 'bold' },
 });

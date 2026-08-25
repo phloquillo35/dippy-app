@@ -81,74 +81,20 @@ src/
 - **F20**: Team dashboard (admin) ✅
 - **F21**: Payment reconciliation (admin) ✅
 - **F22**: Botón "Finalizar turno" en users screens + fix shift labels ✅
-- **F17**: Reemplazo de hardcoded colors — EN PROGRESO (layouts + carts + admin hechos, faltan ~28 archivos)
-- **F19**: Reducción de tabs (8-9 → 5) — PENDIENTE
+- **F17**: Reemplazo de hardcoded colors — ✅ COMPLETADO (25/08/2026, 0 hex en app activa)
+- **F19**: Reducción de tabs (8-9 → 5) — ✅ COMPLETADO (25/08/2026, href:null + accesos rápidos)
 
 ---
 
 ## Pendiente (al 25/08/2026)
 
-### 🔴 F17: Reemplazar hardcoded colors (EN PROGRESO — ~50% hecho)
-**Ya hecho:** layouts kiosko/delivery/admin, carts kiosko/delivery, todas las pantallas admin, onboarding, index.tsx
-**Faltan ~28 archivos** — Sub-agente cancelado a mitad. Revisar cada archivo con `grep` para hex colors y reemplazar.
+### 🟢 F23: Cierre
+- `npx tsc --noEmit` → 0 errores ✅ (verificado en macOS 25/08)
+- Commit + push de F17/F19
 
-Archivos pendientes:
-- `app/(delivery)/product-detail.tsx`
-- `app/(delivery)/products.tsx`
-- `app/(delivery)/cash.tsx`
-- `app/(delivery)/users.tsx`
-- `app/(delivery)/switch.tsx`
-- `app/(delivery)/whatsapp-import.tsx`
-- `app/(delivery)/menu.tsx`
-- `app/(delivery)/orders.tsx`
-- `app/(delivery)/add-product.tsx`
-- `app/(kiosko)/product-detail.tsx`
-- `app/(kiosko)/products.tsx`
-- `app/(kiosko)/cash.tsx`
-- `app/(kiosko)/users.tsx`
-- `app/(kiosko)/switch.tsx`
-- `app/(kiosko)/add-product.tsx`
-- `app/(kiosko)/providers.tsx`
-- `app/(kiosko)/stock.tsx`
-- `app/metrics.tsx`
-- `app/scanner.tsx`
-- `app/providers/[id].tsx`
-- `app/providers/add.tsx`
-- `app/products/add.tsx`
-- `src/components/ErrorBoundary.tsx`
-- `src/components/Button.tsx`
-- `src/components/BarcodeScanner.tsx`
-- `src/components/Card.tsx`
-
-**Reglas de reemplazo:**
-| Hardcoded | Reemplazar con |
-|---|---|
-| `'#FFF'` / `'#FFFFFF'` (texto en botón) | `colors.textOnPrimary` o `Colors.blanco` |
-| `'#E0E0E0'` | `colors.border` o `Colors.grisClaro` |
-| `'#F0F0F0'` | `colors.surface` o `Colors.grisClaro` |
-| `'#999'` / `'#AAA'` / `'#888'` | `colors.placeholder` o `Colors.grisMedio` |
-| `'#333'` / `'#666'` | `colors.textPrimary` / `colors.textSecondary` |
-| `'#CCC'` | `Colors.grisMedio` |
-| `'#1A1A2E'` | `Colors.negroSuave` |
-| `'#25D366'` | `Colors.whatsappGreen` (ya agregado al theme) |
-| `'#0096DC'` | `Colors.azulInstitucional` |
-| `'#F5F5F5'` | `Colors.grisClaro` |
-| `'#444'` | `Colors.grisOscuro` |
-| `'#B8860B'` | `Colors.gold` (ya agregado al theme) |
-| `'#A31515'` | `Colors.errorDark` (ya agregado al theme) |
-| `'#2D7A2D'` | `Colors.successDark` (ya agregado al theme) |
-
-**Nota:** En StyleSheet.create (nivel módulo), usar `Colors.xxx`. En inline styles dentro de componentes con `useColors()`, usar `colors.xxx`.
-
-### 🟡 F19: Reducción de tabs
-- Kiosko: 8 tabs → 5 (combinar Proveedores+Stock→Inventario, Users+Caja→Admin)
-- Delivery: 9 tabs → 5 (similar)
-- Affects: `app/(kiosko)/_layout.tsx`, `app/(delivery)/_layout.tsx`
-
-### 🟢 F23: Verificación final
-- `npx tsc --noEmit` → 0 errores
-- `git add -A && git commit && git push`
-- Agregar screenshots si es posible
+### Notas para próxima sesión
+- `(tabs)/` LEGACY aún tiene hex hardcodeados (residuales sin ruta activa) — eliminar carpeta o migrar si se reactiva
+- Dark mode parcial: los StyleSheet.create estáticos usan Colors.xxx (solo light); pasarlos a inline con useColors() si se quiere dark mode completo
 
 ---
 

@@ -87,11 +87,11 @@ export default function BusinessSelector() {
 
         {currentUser.role === 'admin' && (
           <TouchableOpacity
-            style={[styles.adminBtn, { borderColor: '#1A1A2E' }]}
+            style={[styles.adminBtn, { borderColor: Colors.negroSuave }]}
             onPress={() => router.push('/(admin)')}
           >
             <Text style={{ fontSize: 16 }}>📊</Text>
-            <Text style={[styles.adminBtnText, { color: '#1A1A2E' }]}>Panel Admin</Text>
+            <Text style={[styles.adminBtnText, { color: Colors.negroSuave }]}>Panel Admin</Text>
           </TouchableOpacity>
         )}
 
@@ -115,11 +115,11 @@ const styles = StyleSheet.create({
   logo: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: Colors.blanco,
   },
   subtitle: {
     fontSize: 16,
-    color: '#FFFFFF',
+    color: Colors.blanco,
     opacity: 0.8,
     marginTop: 4,
   },

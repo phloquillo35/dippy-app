@@ -47,14 +47,14 @@ export default function AdminReconciliationScreen() {
             style={[styles.businessBtn, { backgroundColor: selectedBusiness === b ? Colors.celesteInstitucional : colors.card, borderColor: colors.border }]}
             onPress={() => setSelectedBusiness(b)}
           >
-            <Text style={{ color: selectedBusiness === b ? '#FFF' : colors.textPrimary, fontWeight: '600' }}>
+            <Text style={{ color: selectedBusiness === b ? colors.textOnPrimary : colors.textPrimary, fontWeight: '600' }}>
               {b === 'kiosko' ? '🏪 Kiosko' : '🍕 Delivery'}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      <View style={[styles.totalCard, { backgroundColor: '#1A1A2E' }]}>
+      <View style={[styles.totalCard, { backgroundColor: Colors.negroSuave }]}>
         <Text style={styles.totalLabel}>Total registrado hoy</Text>
         <Text style={styles.totalValue}>{formatCurrency(totalIncome)}</Text>
         <Text style={styles.totalSub}>{salesByMethod.length} ventas · {register?.movements.length || 0} movimientos</Text>
@@ -81,7 +81,7 @@ export default function AdminReconciliationScreen() {
             <View key={i} style={[styles.movementRow, { borderBottomColor: colors.border }]}>
               <View style={{ flex: 1 }}>
                 <Text style={{ color: colors.textPrimary, fontSize: 13 }}>{m.description}</Text>
-                <Text style={{ color: '#999', fontSize: 11 }}>{m.userName} · {new Date(m.createdAt).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}</Text>
+                <Text style={{ color: colors.placeholder, fontSize: 11 }}>{m.userName} · {new Date(m.createdAt).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}</Text>
               </View>
               <Text style={{ color: m.type === 'sale' || m.type === 'deposit' ? Colors.exito : Colors.error, fontWeight: 'bold', fontSize: 14 }}>
                 {m.type === 'sale' || m.type === 'deposit' ? '+' : '-'}{formatCurrency(m.amount)}
@@ -101,9 +101,9 @@ const styles = StyleSheet.create({
   businessRow: { flexDirection: 'row', padding: Spacing.md, gap: 8 },
   businessBtn: { flex: 1, padding: 12, borderRadius: 10, alignItems: 'center', borderWidth: 1 },
   totalCard: { margin: Spacing.md, padding: Spacing.lg, borderRadius: BorderRadius.xl, alignItems: 'center' },
-  totalLabel: { color: '#AAA', fontSize: 14 },
+  totalLabel: { color: Colors.grisMedio, fontSize: 14 },
   totalValue: { color: Colors.exito, fontSize: 32, fontWeight: 'bold', marginVertical: 4 },
-  totalSub: { color: '#888', fontSize: 12 },
+  totalSub: { color: Colors.grisMedio, fontSize: 12 },
   section: { padding: Spacing.md },
   sectionTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 10 },
   methodCard: { padding: Spacing.sm, borderRadius: BorderRadius.lg, marginBottom: 8, borderWidth: 1 },
