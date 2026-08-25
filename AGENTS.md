@@ -142,12 +142,17 @@ contraentrega.
   renombres (kiosko products→Almacén/cart→Vender; delivery cart→Pedido).
 - Verificado: `tsc` 0 errores, `npm test` 50/50, Metro bundlea sin errores nativos.
 
-**Pendiente:**
-- **Iconos vectoriales**: `@expo/vector-icons` (Ionicons) requiere módulo nativo `expo-font`, ausente
-  en el dev build (`com.dippy.app`) del simulador → se revirtió a **emoji** en tabs/hub/menú. Para
-  vector icons reales: reconstruir dev build (`npx expo run:ios`) tras instalar `expo-font` (ya en
-  package.json + plugin en app.json).
-- Rebuild del dev build nativo para incluir `expo-font` y validar iconos vectoriales en simulador.
+**Pendiente / decisiones de entorno:**
+- **Iconos**: `@expo/vector-icons` (Ionicons) requiere el módulo nativo `expo-font`, ausente en el dev
+  build (`com.dippy.app`) del simulador. El rebuild nativo **falla** porque RN 0.76 no compila con
+  Xcode 26 (clang rompe `fmt`/consteval); no hay Xcode más viejo instalado. Se instaló cocoapods 1.17
+  (ruby 3.2.2) y se alinearon versiones SDK 52 (`npx expo install`), pero el build nativo sigue roto
+  por el toolchain.
+- **Solución adoptada**: iconos PNG vector-style generados (`assets/icons/*.png`, blancos, tintables) y
+  renderizados con `Image` + `tintColor` en tabs/hub/menú (sin módulo nativo, funciona en el dev build
+  actual). Generador: `gen_icons.py`. Si se actualiza RN/Expo a versión compatible con Xcode 26, se
+  puede migrar a `@expo/vector-icons` real.
+- Quedan emojis en headers/dashboard/quick-access como contenido; convertibles a PNG si se desea.
 
 ---
 

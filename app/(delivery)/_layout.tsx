@@ -1,6 +1,6 @@
 import { Tabs, useRouter } from 'expo-router';
 import { useEffect } from 'react';
-import { Text, View, StyleSheet, Platform } from 'react-native';
+import { Text, View, Image, StyleSheet, Platform } from 'react-native';
 import { Colors, Spacing } from '@/theme';
 import { useBusinessStore } from '@/store/businessStore';
 import { useOrderStore } from '@/store/orderStore';
@@ -8,15 +8,22 @@ import { useUserStore } from '@/store/userStore';
 import { useCashStore } from '@/store/cashStore';
 import { useDeliveryCartStore } from '@/store/deliveryCartStore';
 
-const ICON_EMOJI: Record<string, string> = {
-  home: '🏠', 'fast-food': '🍕', cart: '🛒', list: '📋', cash: '💰',
-  people: '👥', business: '🏢', scale: '⚖️', 'swap-horizontal': '🔄',
-  'logo-whatsapp': '💬',
+const ICON_PNG: Record<string, any> = {
+  home: require('../../assets/icons/home.png'),
+  'fast-food': require('../../assets/icons/food.png'),
+  cart: require('../../assets/icons/cart.png'),
+  list: require('../../assets/icons/list.png'),
+  cash: require('../../assets/icons/cash.png'),
+  people: require('../../assets/icons/people.png'),
+  business: require('../../assets/icons/building.png'),
+  scale: require('../../assets/icons/scale.png'),
+  'swap-horizontal': require('../../assets/icons/swap.png'),
+  'logo-whatsapp': require('../../assets/icons/chat.png'),
 };
 
 const TabIcon = ({ icon, badge, color }: { icon: any; badge?: number; color: string }) => (
   <View style={styles.tabIcon}>
-    <Text style={[styles.tabEmoji, { color }]}>{ICON_EMOJI[icon] || '•'}</Text>
+    <Image source={ICON_PNG[icon]} style={[styles.tabImg, { tintColor: color }]} />
     {badge !== undefined && badge > 0 && (
       <View style={styles.badge}>
         <Text style={styles.badgeText}>{badge > 99 ? '99+' : badge}</Text>
@@ -168,7 +175,7 @@ const styles = StyleSheet.create({
   },
   tabBarLabel: { fontSize: 10, fontWeight: '600' },
   tabIcon: { alignItems: 'center', justifyContent: 'center', position: 'relative', width: 28 },
-  tabEmoji: { fontSize: 22 },
+  tabImg: { width: 26, height: 26, resizeMode: 'contain' },
   badge: {
     position: 'absolute',
     top: -4,

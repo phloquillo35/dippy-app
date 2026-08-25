@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { View, Text, Image, StyleSheet, FlatList, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { Colors, Spacing, BorderRadius } from '@/theme';
 import { useColors } from '@/theme/ThemeProvider';
@@ -110,7 +110,7 @@ export default function KioskoCartScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <Text style={{ fontSize: 18, marginRight: 6 }}>🔍</Text>
+        <Image source={require('../../assets/icons/search.png')} style={{ width: 18, height: 18, tintColor: colors.textSecondary, marginRight: 6 }} />
         <TextInput
           style={[styles.searchInput, { color: colors.textPrimary }]}
           placeholder="Buscar producto..."
@@ -122,7 +122,8 @@ export default function KioskoCartScreen() {
           style={[styles.scanBtn, { backgroundColor: Colors.celesteInstitucional }]}
           onPress={() => router.push('/scanner')}
         >
-          <Text style={styles.scanBtnText}>📷 Escanear</Text>
+          <Image source={require('../../assets/icons/scan.png')} style={{ width: 20, height: 20, tintColor: colors.textOnPrimary, marginRight: 6 }} />
+          <Text style={styles.scanBtnText}>Escanear</Text>
         </TouchableOpacity>
       </View>
 
@@ -144,7 +145,7 @@ export default function KioskoCartScreen() {
               </Text>
             </View>
             <View style={[styles.catalogAdd, { backgroundColor: Colors.exito }]}>
-              <Text style={{ color: colors.textOnPrimary, fontSize: 22, fontWeight: 'bold' }}>+</Text>
+              <Image source={require('../../assets/icons/plus.png')} style={{ width: 22, height: 22, tintColor: colors.textOnPrimary }} />
             </View>
           </TouchableOpacity>
         )}

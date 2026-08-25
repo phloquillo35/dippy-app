@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, Image, StyleSheet, FlatList, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { router } from 'expo-router';
 
 import { Colors, Spacing, BorderRadius } from '@/theme';
@@ -33,7 +33,7 @@ export default function DeliveryMenuScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <Text style={{ fontSize: 18, marginRight: 6 }}>🔍</Text>
+        <Image source={require('../../assets/icons/search.png')} style={{ width: 18, height: 18, tintColor: colors.textSecondary, marginRight: 6 }} />
         <TextInput
           style={[styles.searchInput, { color: colors.textPrimary }]}
           placeholder="Buscar plato..."
@@ -45,7 +45,7 @@ export default function DeliveryMenuScreen() {
           style={[styles.addBtn, { backgroundColor: Colors.azulInstitucional }]}
           onPress={() => router.push('/(delivery)/add-product')}
         >
-          <Text style={{ color: colors.textOnPrimary, fontSize: 18, fontWeight: 'bold' }}>+</Text>
+          <Image source={require('../../assets/icons/plus.png')} style={{ width: 20, height: 20, tintColor: colors.textOnPrimary }} />
         </TouchableOpacity>
       </View>
 
@@ -71,7 +71,7 @@ export default function DeliveryMenuScreen() {
               style={[styles.addCircle, { backgroundColor: Colors.exito }]}
               onPress={(e) => { e.stopPropagation(); handleAdd(item); }}
             >
-              <Text style={{ color: colors.textOnPrimary, fontSize: 20, fontWeight: 'bold' }}>+</Text>
+              <Image source={require('../../assets/icons/plus.png')} style={{ width: 20, height: 20, tintColor: colors.textOnPrimary }} />
             </TouchableOpacity>
           </TouchableOpacity>
         )}
