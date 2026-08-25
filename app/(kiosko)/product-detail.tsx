@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Colors, Spacing, BorderRadius } from '@/theme';
@@ -14,17 +14,14 @@ export default function KioskoProductDetail() {
   const addItem = useCartStore(s => s.addItem);
   const [qty, setQty] = useState(1);
 
-  if (!product) {
-    return (
-      <View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}>
-        <Text style={{ fontSize: 64, marginBottom: 16 }}>📦</Text>
-        <Text style={[styles.title, { color: colors.textPrimary }]}>Producto no encontrado</Text>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={{ color: Colors.celesteInstitucional, fontWeight: 'bold' }}>← Volver</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
+  useEffect(() => {
+    if (!product) {
+      Alert.alert('Producto no disponible', 'Ese producto ya no existe.', [{ text: 'OK' }]);
+      router.replace('/(kiosko)/cart');
+    }
+  }, [product]);
+
+  if (!product) return null;
 
   const maxQty = product.stock;
   const canAdd = product.stock > 0;

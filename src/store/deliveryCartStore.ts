@@ -171,9 +171,10 @@ export const useDeliveryCartStore = create<DeliveryCartState>()(
           paidNow,
         );
 
-        // Si se cobra en el momento, registrar el ingreso en caja (idempotente).
+        // Si se cobra en el momento, el pedido pasa a "Activos" (confirmado).
+        // Se marca como "Vendido" recién al entregarlo (botón Entregado en Pedidos).
         if (order && paidNow) {
-          orderStore.markAsSold(order.id);
+          orderStore.updateOrderStatus(order.id, 'confirmed');
         }
 
         // Registrar cliente automáticamente (si tiene teléfono)

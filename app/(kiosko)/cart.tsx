@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { Colors, Spacing, BorderRadius } from '@/theme';
 import { useColors } from '@/theme/ThemeProvider';
 import { useCartStore } from '@/store/cartStore';
+import { useCashStore } from '@/store/cashStore';
 import { useProductStore } from '@/store/productStore';
 import { useCouponStore } from '@/store/couponStore';
 import { PaymentMethod } from '@/types';
@@ -54,6 +55,7 @@ export default function KioskoCartScreen() {
 
   const executeSale = (split?: SplitPayment[]) => {
     hapticMedium();
+    const cajaAbierta = !!useCashStore.getState().getOpenRegister('kiosko');
     const orderId = useCartStore.getState().confirmStoreOrder('kiosko', split);
     if (orderId && appliedCoupon) applyCoupon(appliedCoupon);
 
@@ -62,7 +64,11 @@ export default function KioskoCartScreen() {
     setCouponCode('');
     setSplitMode(false);
 
-    Alert.alert('✅', 'Venta registrada', [
+    const mensaje = cajaAbierta
+      ? 'Venta registrada'
+      : 'Venta registrada. Atención: la caja está cerrada, por lo que este cobro no se reflejará en el resumen de Caja. Abrila desde la pestaña Caja para registrar los cobros del día.';
+
+    Alert.alert('✅', mensaje, [
       { text: 'OK', style: 'cancel' },
       ...(orderId
         ? [{

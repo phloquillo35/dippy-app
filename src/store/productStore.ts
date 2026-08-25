@@ -301,7 +301,7 @@ export const useProductStore = create<ProductState>()(
         return products;
       },
 
-      getProductById: (id) => get().products.find(p => p.id === id),
+      getProductById: (id) => get().products.find(p => String(p.id) === String(id)),
 
       getProductByBarcode: (barcode, businessId) => {
         let products = get().products.filter(p => p.barcode === barcode && p.isActive);

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { router } from 'expo-router';
 import { Colors, Spacing, BorderRadius, Shadows } from '@/theme';
 import { useColors } from '@/theme/ThemeProvider';
@@ -80,6 +80,13 @@ export default function KioskoProductsScreen() {
           </View>
         }
       />
+
+      <TouchableOpacity
+        style={[styles.fab, { backgroundColor: Colors.celesteInstitucional }]}
+        onPress={() => router.push('/(kiosko)/add-product')}
+      >
+        <Image source={require('../../assets/icons/plus.png')} style={styles.fabIcon} />
+      </TouchableOpacity>
     </View>
   );
 }
@@ -101,4 +108,20 @@ const styles = StyleSheet.create({
   empty: { alignItems: 'center', marginTop: 60 },
   emptyEmoji: { fontSize: 48 },
   emptyText: { fontSize: 16, marginTop: 12 },
+  fab: {
+    position: 'absolute',
+    right: 20,
+    bottom: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  fabIcon: { width: 28, height: 28, tintColor: Colors.blanco },
 });

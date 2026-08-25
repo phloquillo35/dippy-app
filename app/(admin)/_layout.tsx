@@ -1,7 +1,18 @@
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
+import { useEffect } from 'react';
 import { Colors } from '@/theme';
+import { useUserStore } from '@/store/userStore';
 
 export default function AdminLayout() {
+  const router = useRouter();
+  const { currentUser } = useUserStore();
+
+  useEffect(() => {
+    if (!currentUser || currentUser.role !== 'admin') {
+      router.replace('/');
+    }
+  }, [currentUser, router]);
+
   return (
     <Stack
       screenOptions={{

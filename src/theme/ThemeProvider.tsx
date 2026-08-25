@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useColorScheme as useRNColorScheme } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ColorScheme, ColorPalette, getColors } from './index';
 
 interface ThemeContextType {
@@ -31,6 +32,20 @@ export const ThemeProvider = ({
 }: ThemeProviderProps) => {
   const systemScheme = useRNColorScheme();
   const [colorScheme, setColorScheme] = useState<ColorScheme>(defaultScheme);
+
+  useEffect(() => {
+    let mounted = true;
+    AsyncStorage.getItem('dippy-theme').then(saved => {
+      if (mounted && (saved === 'light' || saved === 'dark')) {
+        setColorScheme(saved);
+      }
+    }).catch(() => {});
+    return () => { mounted = false; };
+  }, []);
+
+  useEffect(() => {
+    AsyncStorage.setItem('dippy-theme', colorScheme).catch(() => {});
+  }, [colorScheme]);
 
   const colors = getColors(colorScheme);
 

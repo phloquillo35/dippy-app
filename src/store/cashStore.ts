@@ -32,11 +32,41 @@ export const useCashStore = create<CashState>()(
       openRegister: (businessId, openingAmount, userId, userName) => {
         const today = new Date().toISOString().split('T')[0];
 
-        const existing = get().registers.find(
+        const existingOpen = get().registers.find(
           r => r.businessId === businessId && r.date === today && r.status === 'open'
         );
-        if (existing) {
+        if (existingOpen) {
           throw new Error('Ya hay una caja abierta para este negocio hoy');
+        }
+
+        // Si hoy ya se cerró la caja, la reabrimos (mantiene el monto de apertura e historial).
+        const existingClosed = get().registers.find(
+          r => r.businessId === businessId && r.date === today && r.status === 'closed'
+        );
+        if (existingClosed) {
+          set(state => ({
+            registers: state.registers.map(r =>
+              r.id === existingClosed.id
+                ? {
+                    ...r,
+                    status: 'open' as const,
+                    closingAmount: null,
+                    closedBy: undefined,
+                    closedByName: undefined,
+                    closedAt: undefined,
+                  }
+                : r
+            ),
+          }));
+          const reopened = get().registers.find(r => r.id === existingClosed.id)!;
+          useAuditStore.getState().log({
+            action: 'cash_open',
+            userId,
+            userName,
+            businessId,
+            description: `Caja reabierta (cierre del día descartado)`,
+          });
+          return reopened;
         }
 
         const register: CashRegister = {

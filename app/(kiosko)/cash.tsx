@@ -54,11 +54,33 @@ export default function KioskoCashScreen() {
   };
 
   const handleCloseRegister = () => {
-    if (!register) return;
+    if (!register || !report) return;
     const amount = parseFloat(closingAmount);
     if (isNaN(amount)) return Alert.alert('Error', 'Ingresá el monto final');
+
+    const ingresos = report.cashIn + report.transfersIn + report.cardIn + report.mercadopagoIn;
+    const egresos = report.cashOut;
+    const esperado = report.openingAmount + ingresos - egresos;
+    const diferencia = amount - esperado;
+
     closeRegister(register.id, amount, currentUser?.id || '', currentUser?.name || '');
-    Alert.alert('✅', 'Caja cerrada');
+
+    Alert.alert(
+      'Caja Cerrada',
+      `Apertura: ${formatCurrency(report.openingAmount)}\n` +
+      `Ingresos: ${formatCurrency(ingresos)}\n` +
+      `Egresos: ${formatCurrency(egresos)}\n` +
+      `Esperado: ${formatCurrency(esperado)}\n` +
+      `Contado: ${formatCurrency(amount)}\n` +
+      `Diferencia: ${diferencia >= 0 ? '+' : ''}${formatCurrency(diferencia)}`,
+      [{ text: 'Entendido' }]
+    );
+  };
+
+  const handleReopenRegister = () => {
+    if (!currentUser) return;
+    openRegister(BUSINESS_ID, report?.openingAmount ?? 0, currentUser.id, currentUser.name);
+    Alert.alert('✅', 'Caja reabierta');
   };
 
   const handleAddMovement = () => {
@@ -81,19 +103,36 @@ export default function KioskoCashScreen() {
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
       {!register ? (
-        <View style={styles.openSection}>
-          <Text style={styles.openEmoji}>💰</Text>
-          <Text style={[styles.openTitle, { color: colors.textPrimary }]}>Abrir caja</Text>
-          <Text style={[styles.openDesc, { color: colors.textSecondary }]}>Monto inicial</Text>
-          <TextInput
-            style={[styles.amountInput, { color: colors.textPrimary, borderColor: colors.border }]}
-            placeholder="$ 0" placeholderTextColor={colors.textSecondary}
-            keyboardType="numeric" value={initialAmount} onChangeText={setInitialAmount}
-          />
-          <TouchableOpacity style={[styles.openBtn, { backgroundColor: Colors.celesteInstitucional }]} onPress={handleOpenRegister}>
-            <Text style={styles.openBtnText}>Abrir caja</Text>
-          </TouchableOpacity>
-        </View>
+        report && report.status === 'closed' ? (
+          <View style={styles.openSection}>
+            <Text style={styles.openEmoji}>🔒</Text>
+            <Text style={[styles.openTitle, { color: colors.textPrimary }]}>Caja cerrada hoy</Text>
+            <Text style={[styles.openDesc, { color: colors.textSecondary }]}>
+              Esperado: {formatCurrency(
+                report.openingAmount +
+                report.cashIn + report.transfersIn + report.cardIn + report.mercadopagoIn -
+                report.cashOut
+              )}
+            </Text>
+            <TouchableOpacity style={[styles.openBtn, { backgroundColor: Colors.exito }]} onPress={handleReopenRegister}>
+              <Text style={styles.openBtnText}>Reabrir caja</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.openSection}>
+            <Text style={styles.openEmoji}>💰</Text>
+            <Text style={[styles.openTitle, { color: colors.textPrimary }]}>Abrir caja</Text>
+            <Text style={[styles.openDesc, { color: colors.textSecondary }]}>Monto inicial</Text>
+            <TextInput
+              style={[styles.amountInput, { color: colors.textPrimary, borderColor: colors.border }]}
+              placeholder="$ 0" placeholderTextColor={colors.textSecondary}
+              keyboardType="numeric" value={initialAmount} onChangeText={setInitialAmount}
+            />
+            <TouchableOpacity style={[styles.openBtn, { backgroundColor: Colors.celesteInstitucional }]} onPress={handleOpenRegister}>
+              <Text style={styles.openBtnText}>Abrir caja</Text>
+            </TouchableOpacity>
+          </View>
+        )
       ) : (
         <>
           <View style={[styles.statusCard, { backgroundColor: colors.card, borderColor: colors.border }]}>

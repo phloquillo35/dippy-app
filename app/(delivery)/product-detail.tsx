@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Colors, Spacing, BorderRadius } from '@/theme';
@@ -15,17 +15,14 @@ export default function DeliveryProductDetail() {
   const cartItems = useDeliveryCartStore(s => s.items);
   const [qty, setQty] = useState(1);
 
-  if (!product) {
-    return (
-      <View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}>
-        <Text style={{ fontSize: 64, marginBottom: 16 }}>🍽️</Text>
-        <Text style={[styles.title, { color: colors.textPrimary }]}>Plato no encontrado</Text>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={{ color: Colors.azulInstitucional, fontWeight: 'bold' }}>← Volver</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
+  useEffect(() => {
+    if (!product) {
+      Alert.alert('Plato no disponible', 'Ese plato ya no existe.', [{ text: 'OK' }]);
+      router.replace('/(delivery)/menu');
+    }
+  }, [product]);
+
+  if (!product) return null;
 
   const maxQty = Math.max(
     0,

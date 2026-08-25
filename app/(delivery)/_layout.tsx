@@ -2,6 +2,7 @@ import { Tabs, useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { Text, View, Image, StyleSheet, Platform } from 'react-native';
 import { Colors, Spacing } from '@/theme';
+import { useColors } from '@/theme/ThemeProvider';
 import { useBusinessStore } from '@/store/businessStore';
 import { useOrderStore } from '@/store/orderStore';
 import { useUserStore } from '@/store/userStore';
@@ -19,6 +20,8 @@ const ICON_PNG: Record<string, any> = {
   scale: require('../../assets/icons/scale.png'),
   'swap-horizontal': require('../../assets/icons/swap.png'),
   'logo-whatsapp': require('../../assets/icons/chat.png'),
+  gear: require('../../assets/icons/gear.png'),
+  shield: require('../../assets/icons/lock.png'),
 };
 
 const TabIcon = ({ icon, badge, color }: { icon: any; badge?: number; color: string }) => (
@@ -40,6 +43,7 @@ export default function DeliveryLayout() {
   const currentUser = useUserStore(s => s.currentUser);
   const currentTurn = useUserStore(s => s.currentTurn);
   const cashRegister = useCashStore(s => s.getOpenRegister('delivery'));
+  const colors = useColors();
 
   useEffect(() => {
     if (!activeBusiness || activeBusiness !== 'delivery') {
@@ -61,8 +65,8 @@ export default function DeliveryLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors.azulInstitucional,
-        tabBarInactiveTintColor: Colors.grisMedio,
-        tabBarStyle: styles.tabBar,
+        tabBarInactiveTintColor: colors.textSecondary,
+        tabBarStyle: [styles.tabBar, { backgroundColor: colors.card, borderTopColor: colors.border }],
         tabBarLabelStyle: styles.tabBarLabel,
         headerStyle: { backgroundColor: Colors.azulInstitucional },
         headerTintColor: Colors.blanco,
@@ -76,7 +80,7 @@ export default function DeliveryLayout() {
               </View>
             )}
             {cashRegister && (
-              <View style={styles.cashIndicator}>
+              <View style={{ backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 }}>
                 <Text style={styles.turnEmoji}>💰</Text>
               </View>
             )}
@@ -155,9 +159,18 @@ export default function DeliveryLayout() {
       <Tabs.Screen
         name="switch"
         options={{
+          href: null,
           title: 'Cambiar',
           headerTitle: '🔄 Cambiar Negocio',
           tabBarIcon: ({ focused, color }) => <TabIcon icon="swap-horizontal" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: 'Ajustes',
+          headerTitle: '⚙️ Ajustes',
+          tabBarIcon: ({ focused, color }) => <TabIcon icon="gear" color={color} />,
         }}
       />
     </Tabs>
@@ -190,6 +203,9 @@ const styles = StyleSheet.create({
   },
   badgeText: { color: Colors.blanco, fontSize: 10, fontWeight: 'bold' },
   headerRight: { marginRight: 16, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  adminBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+  adminIcon: { width: 16, height: 16, marginRight: 4, resizeMode: 'contain' },
+  adminBtnText: { color: Colors.blanco, fontSize: 12, fontWeight: '600' },
   turnIndicator: {
     flexDirection: 'row',
     alignItems: 'center',

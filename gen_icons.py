@@ -140,21 +140,50 @@ def icon_building():
 
 def icon_scale():
     c=new_canvas()
-    line(c,24,8,24,40,3,WHITE)
-    flood_poly(c,[(12,14),(36,14),(24,8)], WHITE)  # top
-    # pans
-    disc(c,12,28,6,WHITE,stroke=2)
-    disc(c,36,28,6,WHITE,stroke=2)
-    line(c,12,14,12,24,2,WHITE)
-    line(c,36,14,36,24,2,WHITE)
+    line(c,24,8,24,38,3,WHITE)        # post
+    line(c,10,16,38,16,3,WHITE)       # beam
+    disc(c,10,28,6,WHITE,stroke=2)    # left pan
+    disc(c,38,28,6,WHITE,stroke=2)    # right pan
+    line(c,10,16,10,22,2,WHITE)       # left string
+    line(c,38,16,38,22,2,WHITE)       # right string
+    fill_rect(c,18,38,30,42,WHITE)    # base
+    flood_poly(c,[(21,8),(27,8),(24,4)], WHITE)  # small fulcrum
     return c
 
 def icon_swap():
     c=new_canvas()
-    line(c,8,18,38,18,3,WHITE)
-    flood_poly(c,[(38,18),(30,12),(30,24)],WHITE)
-    line(c,40,30,10,30,3,WHITE)
-    flood_poly(c,[(10,30),(18,24),(18,36)],WHITE)
+    line(c,8,16,36,16,3,WHITE)
+    flood_poly(c,[(38,16),(30,10),(30,22)],WHITE)
+    line(c,40,32,12,32,3,WHITE)
+    flood_poly(c,[(10,32),(18,26),(18,38)],WHITE)
+    return c
+
+def icon_chart():
+    c=new_canvas()
+    fill_rect(c,8,30,18,40,WHITE)
+    fill_rect(c,20,20,30,40,WHITE)
+    fill_rect(c,32,10,42,40,WHITE)
+    line(c,6,40,42,40,3,WHITE)
+    return c
+
+def icon_gear():
+    c=new_canvas()
+    import math
+    circle(c,24,24,15,4,WHITE)   # ring
+    disc(c,24,24,6,WHITE)        # center hub
+    for i in range(8):
+        a = math.radians(i*45)
+        cx = 24 + 18*math.cos(a)
+        cy = 24 + 18*math.sin(a)
+        fill_rect(c, cx-3, cy-3, cx+3, cy+3, WHITE)
+    return c
+
+def icon_lock():
+    c=new_canvas()
+    circle(c,24,18,8,4,WHITE)          # shackle (ring)
+    fill_rect(c,12,22,36,40,WHITE)     # body
+    disc(c,24,30,3,(0,0,0,0))          # keyhole
+    fill_rect(c,23,30,25,36,(0,0,0,0))
     return c
 
 def icon_food():
@@ -206,6 +235,7 @@ defs = {
     "people": icon_people, "building": icon_building, "scale": icon_scale,
     "swap": icon_swap, "food": icon_food, "list": icon_list, "chat": icon_chat,
     "search": icon_search, "scan": icon_scan, "plus": icon_plus,
+    "chart": icon_chart, "gear": icon_gear, "lock": icon_lock,
 }
 for n,f in defs.items():
     save(n, f())
