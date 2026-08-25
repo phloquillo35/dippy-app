@@ -47,7 +47,7 @@ export default function DeliveryHome() {
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Accesos rápidos</Text>
         {[
-          { emoji: '🛒', label: 'Carrito / Crear pedido', route: '/(delivery)/cart' },
+          { emoji: '🍽️', label: 'Nuevo pedido', route: '/(delivery)/menu' },
           { emoji: '📋', label: 'Ver pedidos', route: '/(delivery)/orders' },
           { emoji: '🍽️', label: 'Menú', route: '/(delivery)/menu' },
           { emoji: '💰', label: 'Caja', route: '/(delivery)/cash' },

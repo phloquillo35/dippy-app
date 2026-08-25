@@ -44,6 +44,7 @@ export default function KioskoHome() {
         <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Accesos rápidos</Text>
         {[
           { emoji: '🛒', label: 'Vender', route: '/(kiosko)/cart' },
+          { emoji: '📷', label: 'Escanear', route: '/scanner' },
           { emoji: '📦', label: 'Gestionar stock', route: '/(kiosko)/products' },
           { emoji: '💰', label: 'Caja', route: '/(kiosko)/cash' },
           { emoji: '👥', label: 'Equipo', route: '/(kiosko)/users' },

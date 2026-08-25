@@ -7,15 +7,19 @@ import { useCartStore } from '@/store/cartStore';
 import { useUserStore } from '@/store/userStore';
 import { useCashStore } from '@/store/cashStore';
 
-const TabIcon = ({ emoji, label, badge }: { emoji: string; label: string; badge?: number }) => (
+const ICON_EMOJI: Record<string, string> = {
+  home: '🏠', cube: '📦', cart: '🛒', cash: '💰', people: '👥',
+  business: '🏢', scale: '⚖️', 'swap-horizontal': '🔄',
+};
+
+const TabIcon = ({ icon, badge, color }: { icon: any; badge?: number; color: string }) => (
   <View style={styles.tabIcon}>
-    <Text style={styles.tabEmoji}>{emoji}</Text>
+    <Text style={[styles.tabEmoji, { color }]}>{ICON_EMOJI[icon] || '•'}</Text>
     {badge !== undefined && badge > 0 && (
       <View style={styles.badge}>
         <Text style={styles.badgeText}>{badge > 99 ? '99+' : badge}</Text>
       </View>
     )}
-    <Text style={styles.tabLabel} numberOfLines={1}>{label}</Text>
   </View>
 );
 
@@ -75,15 +79,15 @@ export default function KioskoLayout() {
         options={{
           title: 'Inicio',
           headerTitle: '🏪 Dippy Kiosko',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="🏠" label="Inicio" />,
+          tabBarIcon: ({ focused, color }) => <TabIcon icon="home" color={color} />,
         }}
       />
       <Tabs.Screen
         name="products"
         options={{
-          title: 'Productos',
+          title: 'Almacén',
           headerTitle: '📦 Stock Kiosko',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="📦" label="Stock" />,
+          tabBarIcon: ({ focused, color }) => <TabIcon icon="cube" color={color} />,
         }}
       />
       <Tabs.Screen
@@ -91,7 +95,7 @@ export default function KioskoLayout() {
         options={{
           title: 'Vender',
           headerTitle: '🛒 Venta Directa',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="🛒" label="Vender" badge={itemCount} />,
+          tabBarIcon: ({ focused, color }) => <TabIcon icon="cart" color={color} badge={itemCount} />,
         }}
       />
       <Tabs.Screen
@@ -99,7 +103,7 @@ export default function KioskoLayout() {
         options={{
           title: 'Caja',
           headerTitle: '💰 Caja Kiosko',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="💰" label="Caja" />,
+          tabBarIcon: ({ focused, color }) => <TabIcon icon="cash" color={color} />,
         }}
       />
       <Tabs.Screen
@@ -108,7 +112,7 @@ export default function KioskoLayout() {
           href: null,
           title: 'Equipo',
           headerTitle: '👥 Equipo Kiosko',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="👥" label="Equipo" />,
+          tabBarIcon: ({ focused, color }) => <TabIcon icon="people" color={color} />,
         }}
       />
       <Tabs.Screen
@@ -117,7 +121,7 @@ export default function KioskoLayout() {
           href: null,
           title: 'Proveed.',
           headerTitle: '🏢 Proveedores',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="🏢" label="Proveed." />,
+          tabBarIcon: ({ focused, color }) => <TabIcon icon="business" color={color} />,
         }}
       />
       <Tabs.Screen
@@ -126,7 +130,7 @@ export default function KioskoLayout() {
           href: null,
           title: 'Ajustar',
           headerTitle: '⚖️ Ajuste de Stock',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="⚖️" label="Ajustar" />,
+          tabBarIcon: ({ focused, color }) => <TabIcon icon="scale" color={color} />,
         }}
       />
       <Tabs.Screen
@@ -134,7 +138,7 @@ export default function KioskoLayout() {
         options={{
           title: 'Cambiar',
           headerTitle: '🔄 Cambiar Negocio',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="🔄" label="Cambiar" />,
+          tabBarIcon: ({ focused, color }) => <TabIcon icon="swap-horizontal" color={color} />,
         }}
       />
     </Tabs>
@@ -151,17 +155,16 @@ const styles = StyleSheet.create({
     paddingBottom: Platform.OS === 'ios' ? 28 : 8,
   },
   tabBarLabel: { fontSize: 10, fontWeight: '600' },
-  tabIcon: { alignItems: 'center', justifyContent: 'center', position: 'relative' },
+  tabIcon: { alignItems: 'center', justifyContent: 'center', position: 'relative', width: 28 },
   tabEmoji: { fontSize: 22 },
-  tabLabel: { fontSize: 10, marginTop: 2 },
   badge: {
     position: 'absolute',
     top: -4,
-    right: -12,
+    right: -10,
     backgroundColor: Colors.error,
     borderRadius: 10,
-    minWidth: 20,
-    height: 20,
+    minWidth: 18,
+    height: 18,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 4,

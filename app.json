@@ -51,7 +51,8 @@
           "photosPermission": "Dippy necesita acceso a la galeria para fotos de productos"
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      "expo-font"
     ]
   }
 }

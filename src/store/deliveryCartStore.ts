@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { CartItem, Product, ProductVariant } from '@/types';
+import { CartItem, Product, ProductVariant, PaymentMethod } from '@/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useOrderStore } from './orderStore';
 import { useCustomerStore } from './customerStore';
@@ -31,7 +31,7 @@ interface DeliveryCartState {
   getItemCount: () => number;
 
   // Confirmar pedido de delivery
-  confirmOrder: (userName: string, source?: 'menu' | 'whatsapp' | 'phone') => string | null;
+  confirmOrder: (userName: string, source?: 'menu' | 'whatsapp' | 'phone', paymentMethod?: PaymentMethod, paidNow?: boolean) => string | null;
 }
 
 const generateItemId = (productId: string, variantId?: string) =>
@@ -151,7 +151,7 @@ export const useDeliveryCartStore = create<DeliveryCartState>()(
 
       getItemCount: () => get().items.reduce((sum, item) => sum + item.quantity, 0),
 
-      confirmOrder: (userName, source = 'menu') => {
+      confirmOrder: (userName, source = 'menu', paymentMethod = 'efectivo', paidNow = false) => {
         const state = get();
         if (state.items.length === 0) return null;
 
@@ -167,7 +167,14 @@ export const useDeliveryCartStore = create<DeliveryCartState>()(
           source,
           state.deliveryFee,
           state.discount,
+          paymentMethod,
+          paidNow,
         );
+
+        // Si se cobra en el momento, registrar el ingreso en caja (idempotente).
+        if (order && paidNow) {
+          orderStore.markAsSold(order.id);
+        }
 
         // Registrar cliente automáticamente (si tiene teléfono)
         if (order && state.customerPhone.trim()) {

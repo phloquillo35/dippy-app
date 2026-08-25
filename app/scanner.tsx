@@ -9,6 +9,7 @@ import { BarcodeScanner } from '@/components/BarcodeScanner';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { formatCurrency } from '@/utils/uuid';
+import { hapticSuccess, hapticError } from '@/utils/haptics';
 import { Product, ProductVariant, WeightOption } from '@/types';
 
 export default function ScannerScreen() {
@@ -22,15 +23,34 @@ export default function ScannerScreen() {
   const [manualBarcode, setManualBarcode] = useState('');
   const [showManualInput, setShowManualInput] = useState(false);
   const [scanActive, setScanActive] = useState(true);
+  const [flash, setFlash] = useState<string | null>(null);
+
+  const showFlash = (msg: string) => {
+    setFlash(msg);
+    setTimeout(() => setFlash(null), 1500);
+  };
 
   const handleBarcodeScanned = (barcode: string) => {
     const product = getProductByBarcode(barcode);
 
     if (product) {
-      setScannedProduct(product);
-      setScanActive(false);
-      setSelectedWeight(undefined);
-      setQuantity(1);
+      // Productos pesables: mostramos la hoja de detalle para elegir peso.
+      if (product.isWeightBased) {
+        setScannedProduct(product);
+        setScanActive(false);
+        setSelectedWeight(undefined);
+        setQuantity(1);
+        return;
+      }
+      // Productos normales: se suman al carrito automáticamente y seguimos escaneando.
+      const res = addItem(product);
+      if (res === 'no_stock') {
+        hapticError();
+        Alert.alert('Sin stock', `${product.name} no tiene stock disponible`);
+        return;
+      }
+      hapticSuccess();
+      showFlash(`✅ ${product.name} ×1`);
     } else {
       Alert.alert(
         '❓ Producto no encontrado',
@@ -224,6 +244,12 @@ export default function ScannerScreen() {
         isActive={scanActive}
       />
 
+      {flash && (
+        <View style={[styles.flash, { backgroundColor: Colors.exito }]}>
+          <Text style={styles.flashText}>{flash}</Text>
+        </View>
+      )}
+
       {/* Manual Input Toggle */}
       <View style={styles.manualInputToggle}>
         <Button
@@ -413,4 +439,15 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
     textAlign: 'center',
   },
+  flash: {
+    position: 'absolute',
+    top: 60,
+    left: 20,
+    right: 20,
+    paddingVertical: 12,
+    borderRadius: BorderRadius.lg,
+    alignItems: 'center',
+    ...Shadows.md,
+  },
+  flashText: { color: Colors.blanco, fontSize: 16, fontWeight: 'bold' },
 });

@@ -8,15 +8,20 @@ import { useUserStore } from '@/store/userStore';
 import { useCashStore } from '@/store/cashStore';
 import { useDeliveryCartStore } from '@/store/deliveryCartStore';
 
-const TabIcon = ({ emoji, label, badge }: { emoji: string; label: string; badge?: number }) => (
+const ICON_EMOJI: Record<string, string> = {
+  home: '🏠', 'fast-food': '🍕', cart: '🛒', list: '📋', cash: '💰',
+  people: '👥', business: '🏢', scale: '⚖️', 'swap-horizontal': '🔄',
+  'logo-whatsapp': '💬',
+};
+
+const TabIcon = ({ icon, badge, color }: { icon: any; badge?: number; color: string }) => (
   <View style={styles.tabIcon}>
-    <Text style={styles.tabEmoji}>{emoji}</Text>
+    <Text style={[styles.tabEmoji, { color }]}>{ICON_EMOJI[icon] || '•'}</Text>
     {badge !== undefined && badge > 0 && (
       <View style={styles.badge}>
         <Text style={styles.badgeText}>{badge > 99 ? '99+' : badge}</Text>
       </View>
     )}
-    <Text style={styles.tabLabel} numberOfLines={1}>{label}</Text>
   </View>
 );
 
@@ -77,7 +82,7 @@ export default function DeliveryLayout() {
         options={{
           title: 'Inicio',
           headerTitle: '🍕 Dippy Delivery',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="🏠" label="Inicio" />,
+          tabBarIcon: ({ focused, color }) => <TabIcon icon="home" color={color} />,
         }}
       />
       <Tabs.Screen
@@ -85,15 +90,15 @@ export default function DeliveryLayout() {
         options={{
           title: 'Menú',
           headerTitle: '🍽️ Menú Delivery',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="🍽️" label="Menú" />,
+          tabBarIcon: ({ focused, color }) => <TabIcon icon="fast-food" color={color} />,
         }}
       />
       <Tabs.Screen
         name="cart"
         options={{
-          title: 'Carrito',
-          headerTitle: '🛒 Carrito Delivery',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="🛒" label="Carrito" badge={cartItemCount} />,
+          title: 'Pedido',
+          headerTitle: '🛒 Pedido Delivery',
+          tabBarIcon: ({ focused, color }) => <TabIcon icon="cart" color={color} badge={cartItemCount} />,
         }}
       />
       <Tabs.Screen
@@ -101,7 +106,7 @@ export default function DeliveryLayout() {
         options={{
           title: 'Pedidos',
           headerTitle: '📋 Pedidos',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="📋" label="Pedidos" badge={pendingOrders.length} />,
+          tabBarIcon: ({ focused, color }) => <TabIcon icon="list" color={color} badge={pendingOrders.length} />,
         }}
       />
       <Tabs.Screen
@@ -110,7 +115,7 @@ export default function DeliveryLayout() {
           href: null,
           title: 'Caja',
           headerTitle: '💰 Caja Delivery',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="💰" label="Caja" />,
+          tabBarIcon: ({ focused, color }) => <TabIcon icon="cash" color={color} />,
         }}
       />
       <Tabs.Screen
@@ -119,7 +124,7 @@ export default function DeliveryLayout() {
           href: null,
           title: 'Equipo',
           headerTitle: '👥 Equipo Delivery',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="👥" label="Equipo" />,
+          tabBarIcon: ({ focused, color }) => <TabIcon icon="people" color={color} />,
         }}
       />
       <Tabs.Screen
@@ -128,7 +133,7 @@ export default function DeliveryLayout() {
           href: null,
           title: 'Proveed.',
           headerTitle: '🏢 Proveedores',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="🏢" label="Proveed." />,
+          tabBarIcon: ({ focused, color }) => <TabIcon icon="business" color={color} />,
         }}
       />
       <Tabs.Screen
@@ -137,7 +142,7 @@ export default function DeliveryLayout() {
           href: null,
           title: 'WhatsApp',
           headerTitle: '💬 Importar WhatsApp',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="💬" label="WhatsApp" />,
+          tabBarIcon: ({ focused, color }) => <TabIcon icon="logo-whatsapp" color={color} />,
         }}
       />
       <Tabs.Screen
@@ -145,7 +150,7 @@ export default function DeliveryLayout() {
         options={{
           title: 'Cambiar',
           headerTitle: '🔄 Cambiar Negocio',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="🔄" label="Cambiar" />,
+          tabBarIcon: ({ focused, color }) => <TabIcon icon="swap-horizontal" color={color} />,
         }}
       />
     </Tabs>
@@ -162,17 +167,16 @@ const styles = StyleSheet.create({
     paddingBottom: Platform.OS === 'ios' ? 28 : 8,
   },
   tabBarLabel: { fontSize: 10, fontWeight: '600' },
-  tabIcon: { alignItems: 'center', justifyContent: 'center', position: 'relative' },
+  tabIcon: { alignItems: 'center', justifyContent: 'center', position: 'relative', width: 28 },
   tabEmoji: { fontSize: 22 },
-  tabLabel: { fontSize: 10, marginTop: 2 },
   badge: {
     position: 'absolute',
     top: -4,
-    right: -12,
+    right: -10,
     backgroundColor: Colors.error,
     borderRadius: 10,
-    minWidth: 20,
-    height: 20,
+    minWidth: 18,
+    height: 18,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 4,

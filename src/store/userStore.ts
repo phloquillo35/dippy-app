@@ -50,8 +50,22 @@ interface UserState {
   getUsersByBusiness: (business: BusinessType) => User[];
 }
 
+// PINs por defecto (4 dígitos) para el seed y para usuarios ya persistidos sin PIN.
+const DEFAULT_PINS: Record<string, string> = {
+  'admin-1': '0000',
+  'cajero-1': '1234',
+  'cajero-2': '2345',
+  'dual-1': '3456',
+  'ayudante-1': '4567',
+};
+
+const withPin = (u: Partial<User> & { id: string }): User => ({
+  ...(u as User),
+  pin: u.pin ?? DEFAULT_PINS[u.id],
+});
+
 const DEFAULT_USERS: User[] = [
-  {
+  withPin({
     id: 'admin-1',
     name: 'Marta (Dueña)',
     email: 'marta@dippy.com',
@@ -61,8 +75,8 @@ const DEFAULT_USERS: User[] = [
     createdAt: new Date().toISOString(),
     lastLoginAt: new Date().toISOString(),
     isActive: true,
-  },
-  {
+  }),
+  withPin({
     id: 'cajero-1',
     name: 'Juan (Cajero)',
     role: 'cajero',
@@ -70,8 +84,8 @@ const DEFAULT_USERS: User[] = [
     businesses: ['kiosko'],
     createdAt: new Date().toISOString(),
     isActive: true,
-  },
-  {
+  }),
+  withPin({
     id: 'cajero-2',
     name: 'María (Cajera Delivery)',
     role: 'cajero',
@@ -79,8 +93,8 @@ const DEFAULT_USERS: User[] = [
     businesses: ['delivery'],
     createdAt: new Date().toISOString(),
     isActive: true,
-  },
-  {
+  }),
+  withPin({
     id: 'dual-1',
     name: 'Carlos (Multi)',
     role: 'cajero',
@@ -88,8 +102,8 @@ const DEFAULT_USERS: User[] = [
     businesses: ['kiosko', 'delivery'],
     createdAt: new Date().toISOString(),
     isActive: true,
-  },
-  {
+  }),
+  withPin({
     id: 'ayudante-1',
     name: 'Pedro (Ayudante)',
     role: 'ayudante',
@@ -97,7 +111,7 @@ const DEFAULT_USERS: User[] = [
     businesses: ['kiosko', 'delivery'],
     createdAt: new Date().toISOString(),
     isActive: true,
-  },
+  }),
 ];
 
 export const useUserStore = create<UserState>()(
@@ -109,7 +123,7 @@ export const useUserStore = create<UserState>()(
       turnsHistory: [],
 
       login: async (email, password) => {
-        const user = get().users.find(u => u.email === email && u.isActive);
+        const user = get().users.find(u => (u.email === email || u.id === email) && u.isActive);
         if (user) {
           const updatedUser = { ...user, lastLoginAt: new Date().toISOString() };
           set(state => ({
@@ -396,12 +410,21 @@ export const useUserStore = create<UserState>()(
     {
       name: 'dippy-users',
       storage: createJSONStorage(() => AsyncStorage),
+      version: 2,
       partialize: (state) => ({
         users: state.users,
         currentUser: state.currentUser,
         currentTurn: state.currentTurn,
         turnsHistory: state.turnsHistory,
       }),
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<UserState>;
+        const persistedUsers = (p.users ?? current.users).map(u => ({
+          ...u,
+          pin: u.pin ?? DEFAULT_PINS[u.id],
+        }));
+        return { ...current, ...p, users: persistedUsers };
+      },
     }
   )
 );

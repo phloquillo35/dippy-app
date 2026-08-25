@@ -39,7 +39,7 @@ export default function UserLoginScreen() {
       setPinInput('');
       setPinUser(user);
     } else {
-      await login(user.email || `${user.id}@dippy.local`, '');
+      await login(user.id, '');
       finishLogin();
     }
   };

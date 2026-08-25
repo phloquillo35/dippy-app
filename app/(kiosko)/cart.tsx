@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { router } from 'expo-router';
 import { Colors, Spacing, BorderRadius } from '@/theme';
 import { useColors } from '@/theme/ThemeProvider';
 import { useCartStore } from '@/store/cartStore';
@@ -22,16 +23,34 @@ const PAYMENT_OPTIONS: { method: PaymentMethod; label: string; emoji: string }[]
 export default function KioskoCartScreen() {
   const colors = useColors();
   const { items, addItem, updateQuantity, getTotal, getItemCount, getSubtotal, paymentMethod, setPaymentMethod, discount, setDiscount } = useCartStore();
-  const searchProducts = useProductStore(s => s.searchProducts);
+  const allProducts = useProductStore(s => s.products);
   const { validateCoupon, applyCoupon } = useCouponStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
   const [splitMode, setSplitMode] = useState(false);
 
-  const filteredProducts = searchQuery ? searchProducts(searchQuery, 'kiosko') : [];
+  const catalog = allProducts.filter(
+    p => p.businessId === 'kiosko' &&
+      (!searchQuery.trim() || p.name.toLowerCase().includes(searchQuery.trim().toLowerCase()))
+  );
   const subtotal = getSubtotal();
   const total = getTotal();
+
+  const addToCart = (product: any) => {
+    const result = addItem(product);
+    if (result === 'no_stock') {
+      hapticError();
+      Alert.alert('Sin stock', `${product.name} no tiene stock disponible`);
+      return;
+    }
+    if (result === 'capped') {
+      hapticError();
+      Alert.alert('Stock limitado', `Solo podés agregar hasta ${product.stock} unidades de ${product.name}`);
+      return;
+    }
+    hapticSuccess();
+  };
 
   const executeSale = (split?: SplitPayment[]) => {
     hapticMedium();
@@ -91,55 +110,54 @@ export default function KioskoCartScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <Text>🔍</Text>
+        <Text style={{ fontSize: 18, marginRight: 6 }}>🔍</Text>
         <TextInput
           style={[styles.searchInput, { color: colors.textPrimary }]}
-          placeholder="Escanear o buscar producto..."
+          placeholder="Buscar producto..."
           placeholderTextColor={colors.textSecondary}
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
+        <TouchableOpacity
+          style={[styles.scanBtn, { backgroundColor: Colors.celesteInstitucional }]}
+          onPress={() => router.push('/scanner')}
+        >
+          <Text style={styles.scanBtnText}>📷 Escanear</Text>
+        </TouchableOpacity>
       </View>
 
-      {filteredProducts.length > 0 && (
-        <View style={[styles.productList, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <FlatList
-            data={filteredProducts}
-            keyExtractor={item => item.id}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.productItem}
-                onPress={() => {
-                  const result = addItem(item);
-                  if (result === 'no_stock') {
-                    hapticError();
-                    Alert.alert('Sin stock', `${item.name} no tiene stock disponible`);
-                    return;
-                  }
-                  if (result === 'capped') {
-                    hapticError();
-                    Alert.alert('Stock limitado', `Solo podés agregar hasta ${item.stock} unidades de ${item.name}`);
-                  }
-                  hapticMedium();
-                  setSearchQuery('');
-                }}
-              >
-                <Text style={{ fontSize: 20 }}>{item.emoji}</Text>
-                <View style={{ flex: 1, marginLeft: 8 }}>
-                  <Text style={{ color: colors.textPrimary, fontWeight: '600' }}>{item.name}</Text>
-                  <Text style={{ color: Colors.exito, fontSize: 13 }}>${item.salePrice.toLocaleString()}</Text>
-                </View>
-                <Text style={{ color: item.stock <= 0 ? Colors.error : colors.textSecondary }}>
-                  Stock: {item.stock}
-                </Text>
-              </TouchableOpacity>
-            )}
-            style={{ maxHeight: 200 }}
-          />
-        </View>
-      )}
+      <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Catálogo</Text>
+      <FlatList
+        data={catalog}
+        keyExtractor={item => item.id}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.catalogList}
+        renderItem={({ item }) => (
+          <TouchableOpacity style={[styles.catalogCard, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => addToCart(item)}>
+            <Text style={styles.catalogEmoji}>{item.emoji}</Text>
+            <Text style={[styles.catalogName, { color: colors.textPrimary }]} numberOfLines={2}>{item.name}</Text>
+            <Text style={[styles.catalogPrice, { color: Colors.exito }]}>${item.salePrice.toLocaleString()}</Text>
+            <View style={[styles.catalogStock, { backgroundColor: item.stock <= 0 ? `${Colors.error}20` : `${Colors.exito}20` }]}>
+              <Text style={{ color: item.stock <= 0 ? Colors.error : Colors.exito, fontSize: 11 }}>
+                {item.stock <= 0 ? 'Sin stock' : `Stock ${item.stock}`}
+              </Text>
+            </View>
+            <View style={[styles.catalogAdd, { backgroundColor: Colors.exito }]}>
+              <Text style={{ color: colors.textOnPrimary, fontSize: 22, fontWeight: 'bold' }}>+</Text>
+            </View>
+          </TouchableOpacity>
+        )}
+        ListEmptyComponent={
+          <View style={styles.catalogEmpty}>
+            <Text style={{ color: colors.textSecondary }}>Sin productos</Text>
+          </View>
+        }
+      />
 
-      <Text style={[styles.cartTitle, { color: colors.textPrimary }]}>🛒 Carrito ({getItemCount()})</Text>
+      <View style={styles.cartHeader}>
+        <Text style={[styles.cartTitle, { color: colors.textPrimary }]}>🛒 Carrito ({getItemCount()})</Text>
+      </View>
 
       <FlatList
         data={items}
@@ -156,7 +174,15 @@ export default function KioskoCartScreen() {
               <TouchableOpacity style={[styles.qtyBtn, { backgroundColor: colors.border }]} onPress={() => { updateQuantity(item.id, item.quantity - 1); hapticMedium(); }}>
                 <Text>-</Text>
               </TouchableOpacity>
-              <Text style={{ color: colors.textPrimary, marginHorizontal: 12, fontWeight: 'bold' }}>{item.quantity}</Text>
+              <TextInput
+                style={[styles.qtyInput, { color: colors.textPrimary, borderColor: colors.border }]}
+                keyboardType="number-pad"
+                value={String(item.quantity)}
+                onChangeText={v => {
+                  const n = parseInt(v.replace(/\D/g, ''), 10);
+                  if (!isNaN(n)) { updateQuantity(item.id, n); hapticMedium(); }
+                }}
+              />
               <TouchableOpacity style={[styles.qtyBtn, { backgroundColor: colors.border }]} onPress={() => { updateQuantity(item.id, item.quantity + 1); hapticMedium(); }}>
                 <Text>+</Text>
               </TouchableOpacity>
@@ -167,7 +193,7 @@ export default function KioskoCartScreen() {
         ListEmptyComponent={
           <View style={styles.empty}>
             <Text style={styles.emptyEmoji}>🛒</Text>
-            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>Agregá productos para vender</Text>
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>Tocá un producto del catálogo para agregarlo</Text>
           </View>
         }
       />
@@ -253,16 +279,27 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   searchBar: { flexDirection: 'row', alignItems: 'center', margin: Spacing.md, paddingHorizontal: Spacing.md, borderRadius: BorderRadius.lg, borderWidth: 1, gap: 8 },
   searchInput: { flex: 1, height: 44, fontSize: 16 },
-  productList: { marginHorizontal: Spacing.md, borderRadius: BorderRadius.lg, borderWidth: 1, overflow: 'hidden' },
-  productItem: { flexDirection: 'row', alignItems: 'center', padding: 12, borderBottomWidth: 1, borderBottomColor: Colors.grisClaro },
+  scanBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, height: 40, borderRadius: 10, gap: 6 },
+  scanBtnText: { color: Colors.blanco, fontWeight: 'bold', fontSize: 13 },
+  sectionTitle: { fontSize: 16, fontWeight: 'bold', marginHorizontal: Spacing.md, marginTop: 4, marginBottom: 8 },
+  catalogList: { paddingHorizontal: Spacing.md, gap: 10 },
+  catalogCard: { width: 130, borderRadius: BorderRadius.lg, borderWidth: 1, padding: 10, alignItems: 'center', position: 'relative' },
+  catalogEmoji: { fontSize: 40, marginBottom: 4 },
+  catalogName: { fontSize: 13, fontWeight: '600', textAlign: 'center', minHeight: 34 },
+  catalogPrice: { fontSize: 15, fontWeight: 'bold', marginTop: 2 },
+  catalogStock: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, marginTop: 4 },
+  catalogAdd: { position: 'absolute', top: 6, right: 6, width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  catalogEmpty: { padding: 20 },
+  cartHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
   cartTitle: { fontSize: 18, fontWeight: 'bold', marginHorizontal: Spacing.md, marginBottom: 8 },
-  cartList: { padding: Spacing.md, paddingBottom: 300 },
+  cartList: { padding: Spacing.md, paddingBottom: 280 },
   cartItem: { flexDirection: 'row', alignItems: 'center', padding: Spacing.md, borderRadius: BorderRadius.lg, marginBottom: 8, borderWidth: 1 },
   quantityRow: { flexDirection: 'row', alignItems: 'center' },
   qtyBtn: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  empty: { alignItems: 'center', marginTop: 60 },
+  qtyInput: { width: 40, height: 32, borderWidth: 1, borderRadius: 8, textAlign: 'center', fontSize: 15 },
+  empty: { alignItems: 'center', marginTop: 40 },
   emptyEmoji: { fontSize: 48 },
-  emptyText: { fontSize: 14, marginTop: 8 },
+  emptyText: { fontSize: 14, marginTop: 8, textAlign: 'center', paddingHorizontal: 40 },
   footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: Spacing.lg, borderTopWidth: 2, borderTopColor: Colors.grisClaro },
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
   couponRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },

@@ -28,7 +28,9 @@ interface OrderState {
     userName: string,
     source: 'menu' | 'whatsapp' | 'phone',
     deliveryFee?: number,
-    discount?: number
+    discount?: number,
+    paymentMethod?: PaymentMethod,
+    paidNow?: boolean
   ) => DeliveryOrder | null;
 
   createStoreOrder: (
@@ -79,7 +81,9 @@ export const useOrderStore = create<OrderState>()(
         userName,
         source,
         deliveryFee = 500,
-        discount = 0
+        discount = 0,
+        paymentMethod = 'efectivo',
+        paidNow = false
       ) => {
         const subtotal = items.reduce((sum, item) => sum + item.totalPrice, 0);
         const discountAmount = subtotal * (discount / 100);
@@ -94,7 +98,7 @@ export const useOrderStore = create<OrderState>()(
           discount: discountAmount,
           tax: 0,
           total,
-          paymentMethod: 'efectivo',
+          paymentMethod,
           status: 'pending',
           userId: '',
           userName,
@@ -107,7 +111,7 @@ export const useOrderStore = create<OrderState>()(
           updatedAt: new Date().toISOString(),
           deliveryFee,
           source,
-          paymentReceived: false,
+          paymentReceived: paidNow,
         };
 
         items.forEach(item => {

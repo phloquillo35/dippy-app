@@ -119,6 +119,38 @@ src/
 
 ---
 
+## Rediseño UX (25/08/2026)
+
+Objetivo: cumplir requisitos de Marta (login todos, flujo delivery intuitivo, hub kiosko con
+escáner + catálogo, dashboard maestro con métricas, tab bars claras). Decisiones aprobadas:
+Hub en pestaña "Vender"; pago delivery inmediato (efectivo/transferencia/tarjeta/MercadoPago) +
+contraentrega.
+
+**Completado:**
+- **Login**: `userStore` con PINs seed (admin-1=0000, cajero-1=1234, cajero-2=2345, dual-1=3456,
+  ayudante-1=4567); `login()` matchea por email o id; persist `version:2` + `merge` inyecta PIN a
+  usuarios ya persistidos. `login.tsx` usa modal propio multiplataforma.
+- **Kiosko hub** (`app/(kiosko)/cart.tsx`): buscador + botón "Escanear" → `/scanner` (auto-agrega en
+  scan, sigue escaneando) + catálogo horizontal visible + carrito con `−/+`/cantidad editable +
+  cupón/descuento/dividido/cobrar. `app/scanner.tsx` auto-add no-pesable + banner flash.
+- **Delivery** (`menu.tsx`/`cart.tsx`/`index.tsx`): "Nuevo pedido" → menú (filas → `product-detail`,
+  `+`→`add-product`), carrito en 4 pasos (items→cliente→pago→confirmar) con autocompletar cliente por
+  teléfono; pago inmediato vía `confirmOrder(..., paymentMethod, paidNow)` → `markAsSold` si paidNow.
+- **Dashboard maestro** (`app/(admin)/index.tsx`): selector Hoy/7d/Mes, KPIs por negocio (ingresos,
+  ganancia, ticket promedio, items, gastos), top productos, método de pago, stock bajo, top clientes.
+- **Tab bars** (`(kiosko)/_layout.tsx`, `(delivery)/_layout.tsx`): etiqueta única + badge sobre icono,
+  renombres (kiosko products→Almacén/cart→Vender; delivery cart→Pedido).
+- Verificado: `tsc` 0 errores, `npm test` 50/50, Metro bundlea sin errores nativos.
+
+**Pendiente:**
+- **Iconos vectoriales**: `@expo/vector-icons` (Ionicons) requiere módulo nativo `expo-font`, ausente
+  en el dev build (`com.dippy.app`) del simulador → se revirtió a **emoji** en tabs/hub/menú. Para
+  vector icons reales: reconstruir dev build (`npx expo run:ios`) tras instalar `expo-font` (ya en
+  package.json + plugin en app.json).
+- Rebuild del dev build nativo para incluir `expo-font` y validar iconos vectoriales en simulador.
+
+---
+
 ## Colores del tema (referencia)
 
 ```typescript

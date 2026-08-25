@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
 import { useBusinessStore } from '@/store/businessStore';
 import { useUserStore } from '@/store/userStore';
 import { Colors, Spacing, BorderRadius } from '@/theme';
@@ -13,8 +13,7 @@ export default function BusinessSelector() {
   const { currentUser, logout } = useUserStore();
 
   if (!currentUser) {
-    router.replace('/users/login');
-    return null;
+    return <Redirect href="/users/login" />;
   }
 
   const handleSelect = (business: 'kiosko' | 'delivery') => {
