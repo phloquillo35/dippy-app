@@ -30,10 +30,20 @@ export default function DeliveryLayout() {
   const cashRegister = useCashStore(s => s.getOpenRegister('delivery'));
 
   useEffect(() => {
-    if (!activeBusiness) {
+    if (!activeBusiness || activeBusiness !== 'delivery') {
       router.replace('/');
     }
   }, [activeBusiness]);
+
+  useEffect(() => {
+    if (currentUser && !currentUser.businesses?.includes('delivery') && currentUser.role !== 'admin') {
+      router.replace('/');
+    }
+  }, [currentUser]);
+
+  if (!currentUser || (!currentUser.businesses?.includes('delivery') && currentUser.role !== 'admin')) {
+    return null;
+  }
 
   return (
     <Tabs

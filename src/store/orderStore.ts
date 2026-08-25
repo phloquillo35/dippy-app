@@ -28,6 +28,15 @@ interface OrderState {
     deliveryFee?: number
   ) => DeliveryOrder | null;
 
+  createStoreOrder: (
+    businessId: BusinessType,
+    items: CartItem[],
+    notes: string,
+    userName: string,
+    paymentMethod: PaymentMethod,
+    total: number
+  ) => DeliveryOrder | null;
+
   importFromWhatsApp: (
     message: string,
     userName: string,
@@ -95,7 +104,6 @@ export const useOrderStore = create<OrderState>()(
           paymentReceived: false,
         };
 
-        // Decrementar stock
         items.forEach(item => {
           useProductStore.getState().updateStock(
             item.productId,
@@ -111,6 +119,39 @@ export const useOrderStore = create<OrderState>()(
         set(state => ({
           orders: [order, ...state.orders],
           currentOrder: order,
+        }));
+
+        return order;
+      },
+
+      createStoreOrder: (businessId, items, notes, userName, paymentMethod, total) => {
+        const order: DeliveryOrder = {
+          id: generateId(),
+          businessId,
+          channel: 'store',
+          items,
+          subtotal: total,
+          discount: 0,
+          tax: 0,
+          total,
+          paymentMethod,
+          status: 'sold' as OrderStatus,
+          userId: '',
+          userName,
+          customerName: '',
+          customerPhone: '',
+          customerAddress: '',
+          notes,
+          turnId: '',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          soldAt: new Date().toISOString(),
+          source: 'menu',
+          paymentReceived: true,
+        };
+
+        set(state => ({
+          orders: [order, ...state.orders],
         }));
 
         return order;
@@ -209,7 +250,7 @@ export const useOrderStore = create<OrderState>()(
             o.id === orderId
               ? {
                   ...o,
-                  status: 'sold' as any,
+                  status: 'sold' as OrderStatus,
                   soldAt: new Date().toISOString(),
                   updatedAt: new Date().toISOString(),
                 }
@@ -221,7 +262,6 @@ export const useOrderStore = create<OrderState>()(
       cancelOrder: (orderId) => {
         const order = get().orders.find(o => o.id === orderId);
         if (order) {
-          // Devolver stock
           order.items.forEach(item => {
             useProductStore.getState().updateStock(
               item.productId,
@@ -251,14 +291,14 @@ export const useOrderStore = create<OrderState>()(
       },
 
       getActiveOrders: (businessId) => {
-        const activeStatuses: OrderStatus[] = ['pending', 'confirmed', 'preparing', 'ready', 'delivering'];
+        const activeStatuses: OrderStatus[] = ['pending', 'confirmed', 'preparing', 'ready', 'delivering', 'delivered'];
         let orders = get().orders.filter(o => activeStatuses.includes(o.status));
         if (businessId) orders = orders.filter(o => o.businessId === businessId);
         return orders;
       },
 
       getSoldOrders: (businessId) => {
-        let orders = get().orders.filter(o => (o as any).status === 'sold');
+        let orders = get().orders.filter(o => o.status === 'sold');
         if (businessId) orders = orders.filter(o => o.businessId === businessId);
         return orders;
       },

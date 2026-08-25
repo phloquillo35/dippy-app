@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { Colors, Spacing, BorderRadius } from '@/theme';
 import { useColors } from '@/theme/ThemeProvider';
@@ -8,14 +8,31 @@ import { Button } from '@/components/Button';
 
 export default function UserLoginScreen() {
   const colors = useColors();
-  const { users, login } = useUserStore();
+  const { users, login, loginWithPin } = useUserStore();
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const activeUsers = users.filter(u => u.isActive);
 
   const handleLogin = async () => {
     if (!selectedUserId) return;
     const user = activeUsers.find(u => u.id === selectedUserId);
-    if (user) {
+    if (!user) return;
+
+    if (user.pin) {
+      Alert.prompt(
+        'Ingresar PIN',
+        `PIN de ${user.name}`,
+        async (pin) => {
+          if (!pin) return;
+          try {
+            await loginWithPin(user.id, pin);
+            router.replace('/');
+          } catch (e: any) {
+            Alert.alert('Error', e.message);
+          }
+        },
+        'secure-text'
+      );
+    } else {
       await login(user.email || `${user.id}@dippy.local`, '');
       router.replace('/');
     }
@@ -26,7 +43,7 @@ export default function UserLoginScreen() {
       <View style={styles.header}>
         <Text style={styles.emoji}>👤</Text>
         <Text style={[styles.title, { color: colors.textPrimary }]}>Seleccionar Trabajador</Text>
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Elegi tu usuario para iniciar turno</Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Elegí tu usuario para iniciar turno</Text>
       </View>
 
       <FlatList
@@ -40,7 +57,7 @@ export default function UserLoginScreen() {
             <Text style={styles.userAvatar}>{item.avatar || '👤'}</Text>
             <View style={styles.userInfo}>
               <Text style={[styles.userName, { color: colors.textPrimary }]}>{item.name}</Text>
-              <Text style={[styles.userRole, { color: colors.textSecondary }]}>{item.role}</Text>
+              <Text style={[styles.userRole, { color: colors.textSecondary }]}>{item.role} · {item.businesses?.join(', ')}</Text>
             </View>
             {selectedUserId === item.id && <Text style={[styles.check, { color: colors.primary }]}>✓</Text>}
           </TouchableOpacity>
@@ -50,7 +67,6 @@ export default function UserLoginScreen() {
 
       <View style={styles.actions}>
         <Button title="Iniciar Sesion" onPress={handleLogin} disabled={!selectedUserId} />
-        <Button title="Cancelar" variant="ghost" onPress={() => router.back()} />
       </View>
     </View>
   );

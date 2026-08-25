@@ -6,3 +6,7 @@ export { useProviderStore } from './providerStore';
 export { useOrderStore } from './orderStore';
 export { useBusinessStore } from './businessStore';
 export { useCashStore } from './cashStore';
+export { useAuditStore } from './auditStore';
+export { useCustomerStore } from './customerStore';
+export { useCouponStore } from './couponStore';
+export { useReturnStore } from './returnStore';

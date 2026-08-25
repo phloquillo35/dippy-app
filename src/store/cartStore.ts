@@ -5,6 +5,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { generateId } from '@/utils/uuid';
 import { useUserStore } from './userStore';
 import { useCashStore } from './cashStore';
+import { useProductStore } from './productStore';
+import { useOrderStore } from './orderStore';
 
 interface CartState {
   items: CartItem[];
@@ -27,7 +29,7 @@ interface CartState {
   getItemCount: () => number;
   getChange: () => number;
 
-  confirmStoreOrder: (businessId?: BusinessType) => void;
+  confirmStoreOrder: (businessId?: BusinessType) => string | null;
 }
 
 export const useCartStore = create<CartState>()(
@@ -117,15 +119,24 @@ export const useCartStore = create<CartState>()(
       },
 
       confirmStoreOrder: (businessId = 'kiosko') => {
-        const { items, notes, discount, paymentMethod, amountPaid } = get();
-        const subtotal = get().getSubtotal();
+        const { items, notes, discount, paymentMethod } = get();
+        if (items.length === 0) return null;
+
         const total = get().getTotal();
-        const discountAmount = subtotal * (discount / 100);
-
         const currentUser = useUserStore.getState().currentUser;
-        const currentTurn = useUserStore.getState().currentTurn;
+        if (!currentUser) return null;
 
-        if (!currentUser) return;
+        const payMethod = paymentMethod || 'efectivo';
+
+        // Crear orden de venta (canal store)
+        const order = useOrderStore.getState().createStoreOrder(
+          businessId,
+          items,
+          notes,
+          currentUser.name,
+          payMethod,
+          total
+        );
 
         // Registrar venta en turno
         useUserStore.getState().recordSale(total, items.length, 'store');
@@ -136,8 +147,8 @@ export const useCartStore = create<CartState>()(
           useCashStore.getState().addMovement(cashRegister.id, {
             type: 'sale',
             amount: total,
-            description: `Venta #${Date.now().toString(36).toUpperCase()} - ${items.length} items`,
-            paymentMethod: paymentMethod || 'efectivo',
+            description: `Venta #${order?.id.slice(-6).toUpperCase() || Date.now().toString(36).toUpperCase()} - ${items.length} items`,
+            paymentMethod: payMethod,
             userId: currentUser.id,
             userName: currentUser.name,
           });
@@ -145,8 +156,7 @@ export const useCartStore = create<CartState>()(
 
         // Registrar stock
         items.forEach(item => {
-          const { updateStock } = require('./productStore').useProductStore.getState();
-          updateStock(
+          useProductStore.getState().updateStock(
             item.productId,
             item.quantity,
             'out',
@@ -157,6 +167,7 @@ export const useCartStore = create<CartState>()(
         });
 
         set({ items: [], notes: '', discount: 0, paymentMethod: null, amountPaid: 0 });
+        return order?.id || null;
       },
     }),
     {

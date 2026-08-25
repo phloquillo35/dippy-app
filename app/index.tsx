@@ -1,18 +1,21 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useBusinessStore } from '@/store/businessStore';
 import { useUserStore } from '@/store/userStore';
 import { Colors, Spacing, BorderRadius } from '@/theme';
 import { useColors } from '@/theme/ThemeProvider';
 
-const { width } = Dimensions.get('window');
-
 export default function BusinessSelector() {
   const colors = useColors();
   const router = useRouter();
   const { selectBusiness } = useBusinessStore();
   const { currentUser, logout } = useUserStore();
+
+  if (!currentUser) {
+    router.replace('/users/login');
+    return null;
+  }
 
   const handleSelect = (business: 'kiosko' | 'delivery') => {
     selectBusiness(business);
@@ -28,8 +31,8 @@ export default function BusinessSelector() {
     router.replace('/');
   };
 
-  const canWorkKiosko = currentUser?.role === 'admin' || currentUser?.businesses?.includes('kiosko');
-  const canWorkDelivery = currentUser?.role === 'admin' || currentUser?.businesses?.includes('delivery');
+  const canWorkKiosko = currentUser.role === 'admin' || currentUser.businesses?.includes('kiosko');
+  const canWorkDelivery = currentUser.role === 'admin' || currentUser.businesses?.includes('delivery');
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -40,10 +43,10 @@ export default function BusinessSelector() {
 
       <View style={styles.content}>
         <View style={styles.userCard}>
-          <Text style={styles.userAvatar}>{currentUser?.avatar || '👤'}</Text>
-          <Text style={[styles.userName, { color: colors.textPrimary }]}>{currentUser?.name}</Text>
+          <Text style={styles.userAvatar}>{currentUser.avatar || '👤'}</Text>
+          <Text style={[styles.userName, { color: colors.textPrimary }]}>{currentUser.name}</Text>
           <Text style={[styles.userRole, { color: colors.textSecondary }]}>
-            {currentUser?.role === 'admin' ? 'Administrador' : currentUser?.role}
+            {currentUser.role === 'admin' ? 'Administrador' : currentUser.role}
           </Text>
         </View>
 
@@ -82,7 +85,7 @@ export default function BusinessSelector() {
           )}
         </View>
 
-        {currentUser?.role === 'admin' && (
+        {currentUser.role === 'admin' && (
           <TouchableOpacity
             style={[styles.adminBtn, { borderColor: '#1A1A2E' }]}
             onPress={() => router.push('/(admin)')}

@@ -7,25 +7,12 @@ import { generateId } from '@/utils/uuid';
 interface CashState {
   registers: CashRegister[];
 
-  // Abrir caja
   openRegister: (businessId: BusinessType, openingAmount: number, userId: string, userName: string) => CashRegister;
-
-  // Cerrar caja
   closeRegister: (registerId: string, closingAmount: number, userId: string, userName: string) => void;
-
-  // Agregar movimiento
   addMovement: (registerId: string, movement: Omit<CashMovement, 'id' | 'createdAt'>) => void;
-
-  // Obtener caja abierta del día para un negocio
   getOpenRegister: (businessId: BusinessType) => CashRegister | null;
-
-  // Obtener caja del día para un negocio
   getTodayRegister: (businessId: BusinessType) => CashRegister | null;
-
-  // Obtener historial de cajas
   getRegisterHistory: (businessId: BusinessType, days?: number) => CashRegister[];
-
-  // Obtener reporte diario consolidado
   getDailyReport: (date: string) => {
     kiosko: CashRegister | null;
     delivery: CashRegister | null;
@@ -33,8 +20,6 @@ interface CashState {
     totalExpenses: number;
     netProfit: number;
   };
-
-  // Obtener reporte por negocio
   getBusinessReport: (businessId: BusinessType, date: string) => CashRegister | null;
 }
 
@@ -46,7 +31,6 @@ export const useCashStore = create<CashState>()(
       openRegister: (businessId, openingAmount, userId, userName) => {
         const today = new Date().toISOString().split('T')[0];
 
-        // Verificar si ya hay una caja abierta hoy
         const existing = get().registers.find(
           r => r.businessId === businessId && r.date === today && r.status === 'open'
         );
@@ -107,7 +91,6 @@ export const useCashStore = create<CashState>()(
               movements: [...r.movements, movement],
             };
 
-            // Acumular según tipo y método de pago
             if (movement.type === 'sale') {
               switch (movement.paymentMethod) {
                 case 'efectivo':
@@ -120,6 +103,9 @@ export const useCashStore = create<CashState>()(
                   updates.cardIn = r.cardIn + movement.amount;
                   break;
                 case 'mercadopago':
+                  updates.mercadopagoIn = r.mercadopagoIn + movement.amount;
+                  break;
+                case 'qr':
                   updates.mercadopagoIn = r.mercadopagoIn + movement.amount;
                   break;
               }

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, RefreshControl } from 'react-native';
+import React from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { Colors, Spacing, BorderRadius } from '@/theme';
 import { useColors } from '@/theme/ThemeProvider';
 import { useCashStore } from '@/store/cashStore';
@@ -10,19 +10,20 @@ import { formatCurrency } from '@/utils/uuid';
 
 export default function AdminDashboard() {
   const colors = useColors();
-  const [refreshing, setRefreshing] = useState(false);
 
   const today = new Date().toISOString().split('T')[0];
-  const kioskoReport = useCashStore.getState().getBusinessReport('kiosko', today);
-  const deliveryReport = useCashStore.getState().getBusinessReport('delivery', today);
-  const kioskoRegister = useCashStore.getState().getOpenRegister('kiosko');
-  const deliveryRegister = useCashStore.getState().getOpenRegister('delivery');
+  const kioskoReport = useCashStore(s => s.getBusinessReport('kiosko', today));
+  const deliveryReport = useCashStore(s => s.getBusinessReport('delivery', today));
+  const kioskoRegister = useCashStore(s => s.getOpenRegister('kiosko'));
+  const deliveryRegister = useCashStore(s => s.getOpenRegister('delivery'));
 
-  const kioskoOrders = useOrderStore.getState().getAllOrders('kiosko');
-  const deliveryOrders = useOrderStore.getState().getAllOrders('delivery');
+  const kioskoOrders = useOrderStore(s => s.getAllOrders('kiosko'));
+  const deliveryOrders = useOrderStore(s => s.getAllOrders('delivery'));
 
-  const lowStockKiosko = useProductStore.getState().getLowStockProducts('kiosko');
-  const lowStockDelivery = useProductStore.getState().getLowStockProducts('delivery');
+  const lowStockKiosko = useProductStore(s => s.getLowStockProducts('kiosko'));
+  const lowStockDelivery = useProductStore(s => s.getLowStockProducts('delivery'));
+
+  const users = useUserStore(s => s.getUsers());
 
   const kioskoSales = kioskoReport ? kioskoReport.cashIn + kioskoReport.transfersIn + kioskoReport.cardIn + kioskoReport.mercadopagoIn : 0;
   const deliverySales = deliveryReport ? deliveryReport.cashIn + deliveryReport.transfersIn + deliveryReport.cardIn + deliveryReport.mercadopagoIn : 0;
@@ -33,16 +34,8 @@ export default function AdminDashboard() {
   const totalExpenses = kioskoExpenses + deliveryExpenses;
   const totalProfit = totalSales - totalExpenses;
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 800);
-  };
-
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-    >
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.consolidatedCard, { backgroundColor: '#1A1A2E' }]}>
         <Text style={styles.consolidatedTitle}>📊 Resumen del día</Text>
         <View style={styles.consolidatedRow}>
@@ -157,7 +150,7 @@ export default function AdminDashboard() {
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>👥 Equipo</Text>
         <View style={[styles.teamCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          {useUserStore.getState().getUsers().map((u: any, i: number) => (
+          {users.map((u: any, i: number) => (
             <View key={i} style={styles.teamRow}>
               <Text style={{ fontSize: 20 }}>{u.avatar}</Text>
               <View style={{ flex: 1, marginLeft: 8 }}>
@@ -169,6 +162,35 @@ export default function AdminDashboard() {
               <Text style={{ color: colors.textSecondary, fontSize: 12 }}>{u.role}</Text>
             </View>
           ))}
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>🔗 Accesos rápidos</Text>
+        <View style={styles.statsRow}>
+          <TouchableOpacity style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => (require('expo-router').router.push('/(admin)/reports'))}>
+            <Text style={styles.statEmoji}>📈</Text>
+            <Text style={[styles.statValue, { color: Colors.celesteInstitucional }]}>Reportes</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => (require('expo-router').router.push('/(admin)/margins'))}>
+            <Text style={styles.statEmoji}>💰</Text>
+            <Text style={[styles.statValue, { color: Colors.exito }]}>Márgenes</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => (require('expo-router').router.push('/(admin)/customers'))}>
+            <Text style={styles.statEmoji}>👥</Text>
+            <Text style={[styles.statValue, { color: Colors.advertencia }]}>Clientes</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.statsRow}>
+          <TouchableOpacity style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => (require('expo-router').router.push('/(admin)/team'))}>
+            <Text style={styles.statEmoji}>👷</Text>
+            <Text style={[styles.statValue, { color: Colors.advertencia }]}>Equipo</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => (require('expo-router').router.push('/(admin)/reconciliation'))}>
+            <Text style={styles.statEmoji}>💳</Text>
+            <Text style={[styles.statValue, { color: Colors.azulInstitucional }]}>Conciliación</Text>
+          </TouchableOpacity>
+          <View style={{ flex: 1 }} />
         </View>
       </View>
 

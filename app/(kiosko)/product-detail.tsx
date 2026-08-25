@@ -26,7 +26,18 @@ export default function KioskoProductDetail() {
     );
   }
 
+  const maxQty = product.stock;
+  const canAdd = product.stock > 0;
+
   const handleAdd = () => {
+    if (!canAdd) {
+      Alert.alert('Sin stock', `${product.name} no tiene stock disponible`);
+      return;
+    }
+    if (qty > maxQty) {
+      Alert.alert('Stock insuficiente', `Solo quedan ${maxQty} unidades de ${product.name}`);
+      return;
+    }
     addItem(product, undefined, qty);
     Alert.alert('Agregado', `${qty}x ${product.name} en el carrito`, [
       { text: 'Seguir', onPress: () => router.back() },
@@ -67,21 +78,30 @@ export default function KioskoProductDetail() {
         )}
 
         <View style={styles.qtySection}>
-          <Text style={[styles.qtyLabel, { color: colors.textSecondary }]}>Cantidad</Text>
+          <Text style={[styles.qtyLabel, { color: colors.textSecondary }]}>Cantidad (max: {maxQty})</Text>
           <View style={styles.qtyRow}>
             <TouchableOpacity style={[styles.qtyBtn, { backgroundColor: '#E0E0E0' }]} onPress={() => setQty(Math.max(1, qty - 1))}>
               <Text style={{ fontSize: 18 }}>-</Text>
             </TouchableOpacity>
             <Text style={[styles.qtyValue, { color: colors.textPrimary }]}>{qty}</Text>
-            <TouchableOpacity style={[styles.qtyBtn, { backgroundColor: '#E0E0E0' }]} onPress={() => setQty(qty + 1)}>
+            <TouchableOpacity
+              style={[styles.qtyBtn, { backgroundColor: qty >= maxQty ? '#E0E0E0' : '#E0E0E0' }]}
+              onPress={() => { if (qty < maxQty) setQty(qty + 1); }}
+            >
               <Text style={{ fontSize: 18 }}>+</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        <TouchableOpacity style={[styles.addBtn, { backgroundColor: Colors.celesteInstitucional }]} onPress={handleAdd}>
-          <Text style={styles.addBtnText}>Agregar {qty}x al carrito — {formatCurrency(product.salePrice * qty)}</Text>
-        </TouchableOpacity>
+        {!canAdd ? (
+          <View style={[styles.outOfStockBtn]}>
+            <Text style={styles.outOfStockText}>❌ Sin stock</Text>
+          </View>
+        ) : (
+          <TouchableOpacity style={[styles.addBtn, { backgroundColor: Colors.celesteInstitucional }]} onPress={handleAdd}>
+            <Text style={styles.addBtnText}>Agregar {qty}x al carrito — {formatCurrency(product.salePrice * qty)}</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </ScrollView>
   );
@@ -106,4 +126,6 @@ const styles = StyleSheet.create({
   qtyValue: { fontSize: 24, fontWeight: 'bold', minWidth: 40, textAlign: 'center' },
   addBtn: { paddingVertical: 16, borderRadius: 12, alignItems: 'center' },
   addBtnText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
+  outOfStockBtn: { paddingVertical: 16, borderRadius: 12, alignItems: 'center', backgroundColor: '#F0F0F0' },
+  outOfStockText: { color: '#999', fontSize: 16, fontWeight: 'bold' },
 });

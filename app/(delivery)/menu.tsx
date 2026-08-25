@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { Colors, Spacing, BorderRadius } from '@/theme';
 import { useColors } from '@/theme/ThemeProvider';
 import { useProductStore } from '@/store/productStore';
 import { useDeliveryCartStore } from '@/store/deliveryCartStore';
-import { Product } from '@/types';
 
 export default function DeliveryMenuScreen() {
   const colors = useColors();
@@ -17,6 +16,14 @@ export default function DeliveryMenuScreen() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const filtered = searchQuery ? searchProducts(searchQuery, 'delivery') : products;
+
+  const handleAdd = (item: any) => {
+    if (item.stock <= 0) {
+      Alert.alert('Sin stock', `${item.name} no está disponible`);
+      return;
+    }
+    addItem(item);
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -36,13 +43,16 @@ export default function DeliveryMenuScreen() {
         keyExtractor={item => item.id}
         contentContainerStyle={styles.list}
         renderItem={({ item }) => (
-          <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => addItem(item)}>
+          <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => handleAdd(item)}>
             <Text style={styles.itemEmoji}>{item.emoji}</Text>
             <View style={{ flex: 1, marginLeft: 12 }}>
               <Text style={[styles.itemName, { color: colors.textPrimary }]}>{item.name}</Text>
               <Text style={{ color: colors.textSecondary, fontSize: 13 }}>{item.description}</Text>
+              <Text style={{ color: item.stock <= 0 ? Colors.error : colors.textSecondary, fontSize: 12, marginTop: 2 }}>
+                {item.stock > 0 ? `Stock: ${item.stock}` : 'Agotado'}
+              </Text>
             </View>
-            <Text style={[styles.itemPrice, { color: Colors.exito }]}>${item.salePrice.toLocaleString()}</Text>
+            <Text style={[styles.itemPrice, { color: item.stock > 0 ? Colors.exito : '#999' }]}>${item.salePrice.toLocaleString()}</Text>
           </TouchableOpacity>
         )}
         ListFooterComponent={

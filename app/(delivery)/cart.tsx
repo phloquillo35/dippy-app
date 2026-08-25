@@ -20,6 +20,7 @@ export default function DeliveryCartScreen() {
     if (!currentUser) return Alert.alert('Error', 'Iniciá sesión');
     if (items.length === 0) return Alert.alert('Error', 'Agregá items');
     if (!customerName.trim()) return Alert.alert('Error', 'Ingresá el nombre del cliente');
+    if (!customerAddress.trim()) return Alert.alert('Error', 'Ingresá la dirección de entrega');
 
     Alert.alert(
       'Confirmar pedido',

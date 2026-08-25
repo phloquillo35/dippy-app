@@ -28,10 +28,20 @@ export default function KioskoLayout() {
   const cashRegister = useCashStore(s => s.getOpenRegister('kiosko'));
 
   useEffect(() => {
-    if (!activeBusiness) {
+    if (!activeBusiness || activeBusiness !== 'kiosko') {
       router.replace('/');
     }
   }, [activeBusiness]);
+
+  useEffect(() => {
+    if (currentUser && !currentUser.businesses?.includes('kiosko') && currentUser.role !== 'admin') {
+      router.replace('/');
+    }
+  }, [currentUser]);
+
+  if (!currentUser || (!currentUser.businesses?.includes('kiosko') && currentUser.role !== 'admin')) {
+    return null;
+  }
 
   return (
     <Tabs
