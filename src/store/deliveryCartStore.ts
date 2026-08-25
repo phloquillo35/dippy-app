@@ -29,7 +29,7 @@ interface DeliveryCartState {
   getItemCount: () => number;
 
   // Confirmar pedido de delivery
-  confirmOrder: (userName: string, source?: 'menu' | 'whatsapp' | 'phone' | 'presencial') => string | null;
+  confirmOrder: (userName: string, source?: 'menu' | 'whatsapp' | 'phone') => string | null;
 }
 
 const generateItemId = (productId: string, variantId?: string) =>
@@ -137,20 +137,20 @@ export const useDeliveryCartStore = create<DeliveryCartState>()(
         if (state.items.length === 0) return null;
 
         const orderStore = useOrderStore.getState();
-        const order = orderStore.createOrder({
-          customerName: state.customerName || 'Cliente',
-          customerPhone: state.customerPhone,
-          customerAddress: state.customerAddress,
-          items: [...state.items],
-          source,
+        const order = orderStore.createOrder(
+          'delivery',
+          [...state.items],
+          state.customerName || 'Cliente',
+          state.customerPhone,
+          state.customerAddress,
+          state.notes,
           userName,
-          notes: state.notes,
-          discount: state.discount,
-          deliveryFee: state.deliveryFee,
-        });
+          source,
+          state.deliveryFee,
+        );
 
         get().clearCart();
-        return order.id;
+        return order ? order.id : null;
       },
     }),
     {

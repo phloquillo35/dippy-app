@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { User, WorkTurn, UserRole, TurnShift } from '@/types';
+import { User, WorkTurn, UserRole, TurnShift, BusinessType } from '@/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { generateId } from '@/utils/uuid';
 
@@ -9,41 +9,44 @@ interface UserState {
   users: User[];
   currentTurn: WorkTurn | null;
   turnsHistory: WorkTurn[];
-  
+
   // Auth
   login: (email: string, password: string) => Promise<User | null>;
   loginWithPin: (userId: string, pin: string) => Promise<User | null>;
   logout: () => void;
   register: (userData: Omit<User, 'id' | 'createdAt' | 'lastLoginAt'>) => User;
-  
+
   // PIN management
   setPin: (userId: string, pin: string) => void;
   verifyPin: (userId: string, pin: string) => boolean;
   resetPinAttempts: (userId: string) => void;
   isProfileActive: (userId: string) => boolean;
-  
+
   // Role helpers
   isAdmin: () => boolean;
   canAccessMetrics: () => boolean;
-  
-  // Turn management
-  startTurn: (shift: TurnShift) => WorkTurn;
+  canWorkInBusiness: (business: BusinessType) => boolean;
+
+  // Turn management (ahora con businessId)
+  startTurn: (businessId: BusinessType, shift: TurnShift) => WorkTurn;
   endTurn: () => WorkTurn | null;
   getCurrentTurn: () => WorkTurn | null;
-  
+  getTurnsByBusiness: (businessId: BusinessType) => WorkTurn[];
+
   // Sales tracking
   recordSale: (amount: number, items: number, channel: 'store' | 'delivery') => void;
-  
+
   // Reports
   getTurnReport: (turnId: string) => WorkTurn | undefined;
   getUserReport: (userId: string, date: string) => WorkTurn[];
   getAllTurns: () => WorkTurn[];
-  
+
   // User management
   addUser: (user: Omit<User, 'id' | 'createdAt' | 'lastLoginAt'>) => User;
   updateUser: (id: string, data: Partial<User>) => void;
   deleteUser: (id: string) => void;
   getUsers: () => User[];
+  getUsersByBusiness: (business: BusinessType) => User[];
 }
 
 const DEFAULT_USERS: User[] = [
@@ -53,23 +56,35 @@ const DEFAULT_USERS: User[] = [
     email: 'marta@dippy.com',
     role: 'admin',
     avatar: '👩‍💼',
+    businesses: ['kiosko', 'delivery'],
     createdAt: new Date().toISOString(),
     lastLoginAt: new Date().toISOString(),
     isActive: true,
   },
   {
     id: 'cajero-1',
-    name: 'Juan (Cajero Mañana)',
+    name: 'Juan (Cajero)',
     role: 'cajero',
     avatar: '👨‍💼',
+    businesses: ['kiosko'],
     createdAt: new Date().toISOString(),
     isActive: true,
   },
   {
     id: 'cajero-2',
-    name: 'María (Cajero Tarde)',
+    name: 'María (Cajera Delivery)',
     role: 'cajero',
     avatar: '👩‍💼',
+    businesses: ['delivery'],
+    createdAt: new Date().toISOString(),
+    isActive: true,
+  },
+  {
+    id: 'dual-1',
+    name: 'Carlos (Multi)',
+    role: 'cajero',
+    avatar: '🧑‍💼',
+    businesses: ['kiosko', 'delivery'],
     createdAt: new Date().toISOString(),
     isActive: true,
   },
@@ -78,6 +93,7 @@ const DEFAULT_USERS: User[] = [
     name: 'Pedro (Ayudante)',
     role: 'ayudante',
     avatar: '👨‍🍳',
+    businesses: ['kiosko', 'delivery'],
     createdAt: new Date().toISOString(),
     isActive: true,
   },
@@ -92,7 +108,6 @@ export const useUserStore = create<UserState>()(
       turnsHistory: [],
 
       login: async (email, password) => {
-        // En producción, validar contra backend
         const user = get().users.find(u => u.email === email && u.isActive);
         if (user) {
           const updatedUser = { ...user, lastLoginAt: new Date().toISOString() };
@@ -108,50 +123,44 @@ export const useUserStore = create<UserState>()(
       loginWithPin: async (userId, pin) => {
         const user = get().users.find(u => u.id === userId && u.isActive);
         if (!user) return null;
-        
-        // Si el usuario tiene PIN configurado, verificarlo
+
         if (user.pin) {
-          // Verificar si está bloqueado
           if (user.isLocked) {
             throw new Error('Cuenta bloqueada. Contacte al administrador.');
           }
-          
-          // Verificar PIN
+
           if (user.pin !== pin) {
-            // Incrementar intentos fallidos
             const newAttempts = (user.pinAttempts || 0) + 1;
             const isLocked = newAttempts >= 3;
-            
+
             set(state => ({
-              users: state.users.map(u => 
+              users: state.users.map(u =>
                 u.id === userId ? { ...u, pinAttempts: newAttempts, isLocked } : u
               ),
             }));
-            
+
             if (isLocked) {
               throw new Error('Cuenta bloqueada por 3 intentos fallidos. Contacte al administrador.');
             }
-            
+
             throw new Error(`PIN incorrecto. Intentos restantes: ${3 - newAttempts}`);
           }
-          
-          // PIN correcto, resetear intentos
-          const updatedUser = { 
-            ...user, 
+
+          const updatedUser = {
+            ...user,
             lastLoginAt: new Date().toISOString(),
             pinAttempts: 0,
-            isLocked: false
+            isLocked: false,
           };
-          
+
           set(state => ({
             currentUser: updatedUser,
             users: state.users.map(u => u.id === userId ? updatedUser : u),
           }));
-          
+
           return updatedUser;
         }
-        
-        // Si no tiene PIN configurado, permitir login sin PIN (admin inicial)
+
         const updatedUser = { ...user, lastLoginAt: new Date().toISOString() };
         set(state => ({
           currentUser: updatedUser,
@@ -161,7 +170,6 @@ export const useUserStore = create<UserState>()(
       },
 
       logout: () => {
-        // Si hay turno activo, cerrarlo automáticamente
         if (get().currentTurn) {
           get().endTurn();
         }
@@ -178,6 +186,13 @@ export const useUserStore = create<UserState>()(
         return user?.role === 'admin';
       },
 
+      canWorkInBusiness: (business) => {
+        const user = get().currentUser;
+        if (!user) return false;
+        if (user.role === 'admin') return true;
+        return user.businesses.includes(business);
+      },
+
       register: (userData) => {
         const newUser: User = {
           ...userData,
@@ -190,17 +205,16 @@ export const useUserStore = create<UserState>()(
       },
 
       setPin: (userId, pin) => {
-        // Validar que el PIN sea de 4 dígitos
         if (!/^\d{4}$/.test(pin)) {
           throw new Error('El PIN debe ser de 4 dígitos numéricos');
         }
-        
+
         set(state => ({
-          users: state.users.map(u => 
+          users: state.users.map(u =>
             u.id === userId ? { ...u, pin } : u
           ),
-          currentUser: state.currentUser?.id === userId 
-            ? { ...state.currentUser, pin } 
+          currentUser: state.currentUser?.id === userId
+            ? { ...state.currentUser, pin }
             : state.currentUser,
         }));
       },
@@ -213,7 +227,7 @@ export const useUserStore = create<UserState>()(
 
       resetPinAttempts: (userId) => {
         set(state => ({
-          users: state.users.map(u => 
+          users: state.users.map(u =>
             u.id === userId ? { ...u, pinAttempts: 0, isLocked: false } : u
           ),
         }));
@@ -224,10 +238,10 @@ export const useUserStore = create<UserState>()(
         return user?.isActive ?? false;
       },
 
-      startTurn: (shift) => {
+      startTurn: (businessId, shift) => {
         const user = get().currentUser;
         if (!user) throw new Error('No hay usuario logueado');
-        
+
         const existingTurn = get().currentTurn;
         if (existingTurn && existingTurn.isActive) {
           throw new Error('Ya hay un turno activo');
@@ -235,6 +249,7 @@ export const useUserStore = create<UserState>()(
 
         const newTurn: WorkTurn = {
           id: generateId(),
+          businessId,
           userId: user.id,
           userName: user.name,
           shift,
@@ -271,6 +286,10 @@ export const useUserStore = create<UserState>()(
 
       getCurrentTurn: () => get().currentTurn,
 
+      getTurnsByBusiness: (businessId) => {
+        return get().turnsHistory.filter(t => t.businessId === businessId);
+      },
+
       recordSale: (amount, items, channel) => {
         const turn = get().currentTurn;
         if (!turn || !turn.isActive) return;
@@ -292,9 +311,10 @@ export const useUserStore = create<UserState>()(
 
       getUserReport: (userId, date) => {
         const targetDate = new Date(date).toDateString();
-        return get().turnsHistory.filter(t => 
-          t.userId === userId && 
-          new Date(t.startTime).toDateString() === targetDate
+        return get().turnsHistory.filter(
+          t =>
+            t.userId === userId &&
+            new Date(t.startTime).toDateString() === targetDate
         );
       },
 
@@ -312,8 +332,11 @@ export const useUserStore = create<UserState>()(
 
       updateUser: (id, data) => {
         set(state => ({
-          users: state.users.map(u => u.id === id ? { ...u, ...data } : u),
-          currentUser: state.currentUser?.id === id ? { ...state.currentUser, ...data } : state.currentUser,
+          users: state.users.map(u => (u.id === id ? { ...u, ...data } : u)),
+          currentUser:
+            state.currentUser?.id === id
+              ? { ...state.currentUser, ...data }
+              : state.currentUser,
         }));
       },
 
@@ -324,6 +347,12 @@ export const useUserStore = create<UserState>()(
       },
 
       getUsers: () => get().users.filter(u => u.isActive),
+
+      getUsersByBusiness: (business) => {
+        return get().users.filter(
+          u => u.isActive && (u.role === 'admin' || u.businesses.includes(business))
+        );
+      },
     }),
     {
       name: 'dippy-users',

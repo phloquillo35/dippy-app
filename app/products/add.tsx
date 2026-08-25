@@ -37,6 +37,7 @@ export default function AddProductScreen() {
     if (!salePrice) return Alert.alert('Error', 'Precio de venta obligatorio');
 
     addProduct({
+      businessId: 'kiosko',
       name: name.trim(),
       description: desc.trim() || undefined,
       barcode: barcode.trim() || `GEN-${Date.now()}`,

@@ -1,126 +1,54 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { Order, OrderStatus, CartItem, PaymentMethod, BusinessType } from '@/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { generateId } from '@/utils/uuid';
-import { CartItem, SalesChannel, PaymentMethod } from '@/types';
+import { useProductStore } from './productStore';
 
-export type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivering' | 'delivered' | 'sold' | 'cancelled';
-
-export interface DeliveryOrder {
-  id: string;
-  customerName: string;
-  customerPhone: string;
-  customerAddress: string;
-  items: CartItem[];
-  subtotal: number;
-  discount: number;
-  deliveryFee: number;
-  total: number;
-  status: OrderStatus;
-  paymentMethod?: PaymentMethod;
-  amountPaid?: number;           // Monto que entrega el cliente
-  paymentReceived: boolean;
-  source: 'menu' | 'whatsapp' | 'phone' | 'presencial';
-  notes?: string;
-  userName: string;
-  createdAt: string;
-  updatedAt: string;
-  confirmedAt?: string;
-  deliveredAt?: string;
+interface DeliveryOrder extends Order {
+  amountPaid?: number;
+  paymentReceived?: boolean;
+  deliveryFee?: number;
   soldAt?: string;
-  paidAt?: string;               // Cuándo se registró el pago
 }
 
 interface OrderState {
   orders: DeliveryOrder[];
   currentOrder: DeliveryOrder | null;
 
-  // Crear pedido
-  createOrder: (data: {
-    customerName: string;
-    customerPhone: string;
-    customerAddress: string;
-    items: CartItem[];
-    source: 'menu' | 'whatsapp' | 'phone' | 'presencial';
-    userName: string;
-    notes?: string;
-    discount?: number;
-    deliveryFee?: number;
-  }) => DeliveryOrder;
+  createOrder: (
+    businessId: BusinessType,
+    items: CartItem[],
+    customerName: string,
+    customerPhone: string,
+    customerAddress: string,
+    notes: string,
+    userName: string,
+    source: 'menu' | 'whatsapp' | 'phone',
+    deliveryFee?: number
+  ) => DeliveryOrder | null;
 
-  // Importar desde WhatsApp
-  importFromWhatsApp: (message: string, userName: string) => DeliveryOrder | null;
+  importFromWhatsApp: (
+    message: string,
+    userName: string,
+    businessId?: BusinessType
+  ) => DeliveryOrder | null;
 
-  // Actualizar estado del pedido
   updateOrderStatus: (orderId: string, status: OrderStatus) => void;
-
-  // Registrar pago
-  markAsPaid: (orderId: string, method: PaymentMethod, amount?: number) => void;
-
-  // Marcar como entregado
+  markAsPaid: (orderId: string, method: PaymentMethod, amount: number) => void;
   markAsDelivered: (orderId: string) => void;
-
-  // Marcar como vendido (post-entrega, registra en turno)
   markAsSold: (orderId: string) => void;
-
-  // Cancelar pedido
   cancelOrder: (orderId: string) => void;
 
-  // Obtener pedidos
-  getPendingOrders: () => DeliveryOrder[];
-  getActiveOrders: () => DeliveryOrder[];
-  getSoldOrders: () => DeliveryOrder[];
-  getOrderById: (id: string) => DeliveryOrder | undefined;
+  getPendingOrders: (businessId?: BusinessType) => DeliveryOrder[];
+  getActiveOrders: (businessId?: BusinessType) => DeliveryOrder[];
+  getSoldOrders: (businessId?: BusinessType) => DeliveryOrder[];
+  getAllOrders: (businessId?: BusinessType) => DeliveryOrder[];
+  getOrderById: (orderId: string) => DeliveryOrder | undefined;
 
-  // Importar pedido rápido de cliente frecuente
-  reorderFromCustomer: (phone: string) => DeliveryOrder | null;
-
-  // Limpiar
+  reorderFromCustomer: (orderId: string) => CartItem[];
   clearCurrentOrder: () => void;
 }
-
-// Parser simple de mensajes de WhatsApp
-const parseWhatsAppMessage = (message: string): Array<{ name: string; quantity: number }> => {
-  const items: Array<{ name: string; quantity: number }> = [];
-  const lines = message.split('\n').filter(l => l.trim());
-
-  for (const line of lines) {
-    // Buscar patrones como "2x salame", "1 pizza", "3 coca", "x2 sandwich"
-    const patterns = [
-      /(\d+)\s*x\s*(.+)/i,      // 2x salame
-      /(\d+)\s+(.+)/i,          // 2 salame
-      /x(\d+)\s+(.+)/i,         // x2 salame
-      /(.+)\s*x\s*(\d+)/i,     // salame x2
-    ];
-
-    for (const pattern of patterns) {
-      const match = line.trim().match(pattern);
-      if (match) {
-        const qty = parseInt(match[1]) || 1;
-        const name = match[2]?.trim() || match[1]?.trim();
-        if (name && name.length > 1) {
-          items.push({ name, quantity: qty });
-          break;
-        }
-      }
-    }
-  }
-
-  return items;
-};
-
-// Fuzzy match contra productos del catálogo
-const fuzzyMatchProduct = (searchName: string, catalogProducts: Array<{ name: string; id: string }>): string | null => {
-  const search = searchName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-
-  for (const product of catalogProducts) {
-    const productName = product.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    if (productName.includes(search) || search.includes(productName)) {
-      return product.id;
-    }
-  }
-  return null;
-};
 
 export const useOrderStore = create<OrderState>()(
   persist(
@@ -128,74 +56,57 @@ export const useOrderStore = create<OrderState>()(
       orders: [],
       currentOrder: null,
 
-      createOrder: (data) => {
-        const subtotal = data.items.reduce((sum, item) => sum + item.totalPrice, 0);
-        const discount = data.discount || 0;
-        const deliveryFee = data.deliveryFee || 0;
+      createOrder: (
+        businessId,
+        items,
+        customerName,
+        customerPhone,
+        customerAddress,
+        notes,
+        userName,
+        source,
+        deliveryFee = 500
+      ) => {
+        const subtotal = items.reduce((sum, item) => sum + item.totalPrice, 0);
+        const total = subtotal + deliveryFee;
 
         const order: DeliveryOrder = {
           id: generateId(),
-          customerName: data.customerName,
-          customerPhone: data.customerPhone,
-          customerAddress: data.customerAddress,
-          items: data.items,
-          subtotal,
-          discount: subtotal * (discount / 100),
-          deliveryFee,
-          total: subtotal - (subtotal * (discount / 100)) + deliveryFee,
-          status: 'pending',
-          source: data.source,
-          notes: data.notes,
-          userName: data.userName,
-          paymentReceived: false,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-
-        set(state => ({
-          orders: [order, ...state.orders],
-          currentOrder: order,
-        }));
-
-        return order;
-      },
-
-      importFromWhatsApp: (message, userName) => {
-        const parsedItems = parseWhatsAppMessage(message);
-
-        if (parsedItems.length === 0) return null;
-
-        // Crear items con precios default (se ajustarán manualmente)
-        const items: CartItem[] = parsedItems.map(parsed => ({
-          id: generateId(),
-          productId: 'pending-match',
-          productName: parsed.name,
-          quantity: parsed.quantity,
-          unitPrice: 0,
-          costPrice: 0,
-          totalPrice: 0,
-        }));
-
-        const subtotal = 0; // Se ajustará al confirmar
-
-        const order: DeliveryOrder = {
-          id: generateId(),
-          customerName: 'Cliente WhatsApp',
-          customerPhone: '',
-          customerAddress: '',
+          businessId,
+          channel: 'delivery',
           items,
           subtotal,
           discount: 0,
-          deliveryFee: 0,
-          total: subtotal,
+          tax: 0,
+          total,
+          paymentMethod: 'efectivo',
           status: 'pending',
-          source: 'whatsapp',
-          notes: `Pedido importado de WhatsApp:\n${message}`,
+          userId: '',
           userName,
-          paymentReceived: false,
+          customerName,
+          customerPhone,
+          customerAddress,
+          notes,
+          turnId: '',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
+          deliveryFee,
+          source,
+          paymentReceived: false,
         };
+
+        // Decrementar stock
+        items.forEach(item => {
+          useProductStore.getState().updateStock(
+            item.productId,
+            item.quantity,
+            'out',
+            `Pedido #${order.id.slice(-6).toUpperCase()}`,
+            '',
+            userName,
+            order.id
+          );
+        });
 
         set(state => ({
           orders: [order, ...state.orders],
@@ -205,97 +116,164 @@ export const useOrderStore = create<OrderState>()(
         return order;
       },
 
+      importFromWhatsApp: (message, userName, businessId = 'delivery') => {
+        const lines = message.split('\n').filter(l => l.trim());
+        const items: CartItem[] = [];
+        const products = useProductStore.getState().getProducts(businessId);
+
+        for (const line of lines) {
+          const cleaned = line.trim().replace(/^[•\-*]\s*/, '');
+          const qtyMatch = cleaned.match(/^(\d+|x\d+)\s+(.+)/i);
+          if (!qtyMatch) continue;
+
+          const qty = parseInt(qtyMatch[1].replace('x', '')) || 1;
+          const productName = qtyMatch[2].toLowerCase();
+
+          const product = products.find(p =>
+            p.name.toLowerCase().includes(productName) ||
+            p.tags.some(t => t.toLowerCase().includes(productName))
+          );
+
+          if (product) {
+            items.push({
+              id: generateId(),
+              productId: product.id,
+              productName: product.name,
+              quantity: qty,
+              unitPrice: product.salePrice,
+              costPrice: product.costPrice,
+              totalPrice: product.salePrice * qty,
+              emoji: product.emoji,
+            });
+          }
+        }
+
+        if (items.length === 0) return null;
+
+        return get().createOrder(
+          businessId,
+          items,
+          'Cliente WhatsApp',
+          '',
+          '',
+          'Importado desde WhatsApp',
+          userName,
+          'whatsapp'
+        );
+      },
+
       updateOrderStatus: (orderId, status) => {
-        const now = new Date().toISOString();
-        const updates: Partial<DeliveryOrder> = { status, updatedAt: now };
-
-        if (status === 'confirmed') updates.confirmedAt = now;
-        if (status === 'delivered') updates.deliveredAt = now;
-
         set(state => ({
           orders: state.orders.map(o =>
-            o.id === orderId ? { ...o, ...updates } : o
+            o.id === orderId
+              ? { ...o, status, updatedAt: new Date().toISOString() }
+              : o
           ),
-          currentOrder: state.currentOrder?.id === orderId
-            ? { ...state.currentOrder, ...updates }
-            : state.currentOrder,
         }));
       },
 
       markAsPaid: (orderId, method, amount) => {
-        const now = new Date().toISOString();
         set(state => ({
           orders: state.orders.map(o =>
-            o.id === orderId ? { 
-              ...o, 
-              paymentMethod: method, 
-              paymentReceived: true, 
-              amountPaid: amount,
-              paidAt: now,
-              updatedAt: now 
-            } : o
+            o.id === orderId
+              ? {
+                  ...o,
+                  paymentMethod: method,
+                  amountPaid: amount,
+                  paymentReceived: true,
+                  updatedAt: new Date().toISOString(),
+                }
+              : o
           ),
-          currentOrder: state.currentOrder?.id === orderId
-            ? { 
-                ...state.currentOrder, 
-                paymentMethod: method, 
-                paymentReceived: true,
-                amountPaid: amount,
-                paidAt: now,
-              }
-            : state.currentOrder,
         }));
       },
 
       markAsDelivered: (orderId) => {
-        get().updateOrderStatus(orderId, 'delivered');
+        set(state => ({
+          orders: state.orders.map(o =>
+            o.id === orderId
+              ? {
+                  ...o,
+                  status: 'delivered' as OrderStatus,
+                  completedAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
+                }
+              : o
+          ),
+        }));
       },
 
       markAsSold: (orderId) => {
-        const now = new Date().toISOString();
         set(state => ({
           orders: state.orders.map(o =>
-            o.id === orderId ? { ...o, status: 'sold', soldAt: now, updatedAt: now } : o
+            o.id === orderId
+              ? {
+                  ...o,
+                  status: 'sold' as any,
+                  soldAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
+                }
+              : o
           ),
-          currentOrder: state.currentOrder?.id === orderId
-            ? { ...state.currentOrder, status: 'sold', soldAt: now }
-            : null,
         }));
       },
 
       cancelOrder: (orderId) => {
-        get().updateOrderStatus(orderId, 'cancelled');
+        const order = get().orders.find(o => o.id === orderId);
+        if (order) {
+          // Devolver stock
+          order.items.forEach(item => {
+            useProductStore.getState().updateStock(
+              item.productId,
+              item.quantity,
+              'return',
+              `Pedido #${orderId.slice(-6).toUpperCase()} cancelado`,
+              '',
+              order.userName,
+              orderId
+            );
+          });
+        }
+
+        set(state => ({
+          orders: state.orders.map(o =>
+            o.id === orderId
+              ? { ...o, status: 'cancelled' as OrderStatus, updatedAt: new Date().toISOString() }
+              : o
+          ),
+        }));
       },
 
-      getPendingOrders: () =>
-        get().orders.filter(o => o.status === 'pending'),
+      getPendingOrders: (businessId) => {
+        let orders = get().orders.filter(o => o.status === 'pending');
+        if (businessId) orders = orders.filter(o => o.businessId === businessId);
+        return orders;
+      },
 
-      getActiveOrders: () =>
-        get().orders.filter(o =>
-          ['pending', 'confirmed', 'preparing', 'ready', 'delivering'].includes(o.status)
-        ),
+      getActiveOrders: (businessId) => {
+        const activeStatuses: OrderStatus[] = ['pending', 'confirmed', 'preparing', 'ready', 'delivering'];
+        let orders = get().orders.filter(o => activeStatuses.includes(o.status));
+        if (businessId) orders = orders.filter(o => o.businessId === businessId);
+        return orders;
+      },
 
-      getSoldOrders: () =>
-        get().orders.filter(o => o.status === 'sold'),
+      getSoldOrders: (businessId) => {
+        let orders = get().orders.filter(o => (o as any).status === 'sold');
+        if (businessId) orders = orders.filter(o => o.businessId === businessId);
+        return orders;
+      },
 
-      getOrderById: (id) =>
-        get().orders.find(o => o.id === id),
+      getAllOrders: (businessId) => {
+        let orders = get().orders;
+        if (businessId) orders = orders.filter(o => o.businessId === businessId);
+        return orders;
+      },
 
-      reorderFromCustomer: (phone) => {
-        const lastOrder = get().orders.find(o =>
-          o.customerPhone === phone && o.status === 'sold'
-        );
+      getOrderById: (orderId) => get().orders.find(o => o.id === orderId),
 
-        if (!lastOrder) return null;
-
-        return {
-          ...lastOrder,
-          id: generateId(),
-          status: 'pending',
-          items: lastOrder.items.map(item => ({ ...item, id: generateId() })),
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
+      reorderFromCustomer: (orderId) => {
+        const order = get().orders.find(o => o.id === orderId);
+        return order ? order.items.map(i => ({ ...i, id: generateId() })) : [];
       },
 
       clearCurrentOrder: () => set({ currentOrder: null }),

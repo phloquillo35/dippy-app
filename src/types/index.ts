@@ -1,43 +1,56 @@
 // Tipos principales del sistema Dippy
 
+export type BusinessType = 'kiosko' | 'delivery';
+
 export type SalesChannel = 'store' | 'delivery';
 
 export type UserRole = 'cajero' | 'ayudante' | 'supervisor' | 'admin';
 
-export type ProductCategory = 
-  | 'limpieza' 
-  | 'cocina' 
-  | 'comestibles' 
-  | 'caramelos' 
-  | 'fiambres' 
-  | 'gaseosas' 
-  | 'panaderia' 
-  | 'comida_preparada';
+export type ProductCategory =
+  | 'limpieza'
+  | 'cocina'
+  | 'comestibles'
+  | 'caramelos'
+  | 'fiambres'
+  | 'gaseosas'
+  | 'panaderia'
+  | 'comida_preparada'
+  | 'bebidas'
+  | 'snacks'
+  | 'lacteos'
+  | 'carnes'
+  | 'postres';
 
 export type PaymentMethod = 'efectivo' | 'tarjeta' | 'qr' | 'transferencia' | 'mercadopago';
 
-export type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivered' | 'cancelled';
+export type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'delivering' | 'delivered' | 'sold' | 'cancelled';
 
 export type TurnShift = 'manana' | 'tarde' | 'noche';
 
-// Usuario del sistema
+// ============================================================
+// USUARIO
+// ============================================================
 export interface User {
   id: string;
   name: string;
   email?: string;
   role: UserRole;
   avatar?: string;
-  pin?: string;              // PIN numérico de 4 dígitos
+  pin?: string;
+  businesses: BusinessType[];  // Negocios donde puede trabajar
   createdAt: string;
   lastLoginAt?: string;
   isActive: boolean;
-  pinAttempts?: number;      // Intentos fallidos de PIN
-  isLocked?: boolean;        // Bloqueado por intentos fallidos
+  pinAttempts?: number;
+  isLocked?: boolean;
 }
 
-// Turno de trabajo
+// ============================================================
+// TURNO DE TRABAJO
+// ============================================================
 export interface WorkTurn {
   id: string;
+  businessId: BusinessType;
   userId: string;
   userName: string;
   shift: TurnShift;
@@ -50,9 +63,12 @@ export interface WorkTurn {
   isActive: boolean;
 }
 
-// Producto base
+// ============================================================
+// PRODUCTO
+// ============================================================
 export interface Product {
   id: string;
+  businessId: BusinessType;
   name: string;
   description?: string;
   barcode: string;
@@ -74,16 +90,14 @@ export interface Product {
   updatedAt: string;
 }
 
-// Opciones de peso para productos por peso
 export interface WeightOption {
   id: string;
-  label: string;        // ej: "100g", "200g", "500g", "1kg"
+  label: string;
   weightInGrams: number;
   price: number;
   costPrice: number;
 }
 
-// Variante de producto (para peso, tamaño, etc)
 export interface ProductVariant {
   id: string;
   productId: string;
@@ -97,7 +111,9 @@ export interface ProductVariant {
   isDefault: boolean;
 }
 
-// Item en carrito/orden
+// ============================================================
+// CARRITO / ITEMS
+// ============================================================
 export interface CartItem {
   id: string;
   productId: string;
@@ -110,12 +126,15 @@ export interface CartItem {
   costPrice: number;
   totalPrice: number;
   emoji?: string;
-  notes?: string;       // ej: "sin sal", "bien cocido"
+  notes?: string;
 }
 
-// Orden de venta
+// ============================================================
+// ORDEN / PEDIDO
+// ============================================================
 export interface Order {
   id: string;
+  businessId: BusinessType;
   channel: SalesChannel;
   items: CartItem[];
   subtotal: number;
@@ -134,9 +153,17 @@ export interface Order {
   createdAt: string;
   updatedAt: string;
   completedAt?: string;
+  // Delivery
+  amountPaid?: number;
+  paymentReceived?: boolean;
+  deliveryFee?: number;
+  source?: 'menu' | 'whatsapp' | 'phone';
+  soldAt?: string;
 }
 
-// Proveedor
+// ============================================================
+// PROVEEDOR (compartido entre ambos negocios)
+// ============================================================
 export interface Provider {
   id: string;
   name: string;
@@ -145,29 +172,27 @@ export interface Provider {
   phone?: string;
   address?: string;
   cuit?: string;
-  paymentTerms?: string;      // ej: "30 días", "contado"
+  paymentTerms?: string;
   categories: ProductCategory[];
-  rating: number;             // 1-5
+  rating: number;
   isPreferred: boolean;
   isActive: boolean;
   notes?: string;
   createdAt: string;
   updatedAt: string;
-  payments?: PaymentSupplier[];  // Historial de pagos
+  payments?: PaymentSupplier[];
 }
 
-// Pago a proveedor
 export interface PaymentSupplier {
   id: string;
   providerId: string;
-  amount: number;             // Monto pagado
-  date: string;               // Fecha del pago
-  method: PaymentMethod;      // Efectivo/Transferencia/Check
-  reason?: string;            // Concepto o descripción del pago
-  userId: string;             // Quién registró el pago
+  amount: number;
+  date: string;
+  method: PaymentMethod;
+  reason?: string;
+  userId: string;
 }
 
-// Producto del proveedor (catálogo)
 export interface ProviderProduct {
   id: string;
   providerId: string;
@@ -181,26 +206,73 @@ export interface ProviderProduct {
   lastUpdated: string;
 }
 
-// Configuración del negocio
+// ============================================================
+// CAJA DIARIA (por negocio)
+// ============================================================
+export interface CashRegister {
+  id: string;
+  businessId: BusinessType;
+  date: string;
+  openingAmount: number;
+  cashIn: number;
+  cashOut: number;
+  transfersIn: number;
+  cardIn: number;
+  mercadopagoIn: number;
+  closingAmount: number | null;
+  status: 'open' | 'closed';
+  openedBy: string;
+  openedByName: string;
+  closedBy?: string;
+  closedByName?: string;
+  closedAt?: string;
+  notes?: string;
+  movements: CashMovement[];
+}
+
+export interface CashMovement {
+  id: string;
+  type: 'sale' | 'expense' | 'withdrawal' | 'deposit' | 'adjustment' | 'supplier_payment';
+  amount: number;
+  description: string;
+  paymentMethod: PaymentMethod;
+  orderId?: string;
+  userId: string;
+  userName: string;
+  createdAt: string;
+}
+
+// ============================================================
+// CONFIGURACIÓN DEL NEGOCIO
+// ============================================================
 export interface BusinessConfig {
-  name: string;
-  address: string;
-  phone: string;
-  email: string;
-  cuit: string;
-  ivaCondition: 'responsable_inscripto' | 'monotributo' | 'exento';
-  printerIp?: string;
-  whatsappNumber?: string;
-  deliveryRadiusKm: number;
-  deliveryFee: number;
-  minDeliveryOrder: number;
+  kiosko: {
+    name: string;
+    address: string;
+    phone: string;
+    cuit: string;
+    whatsappNumber?: string;
+  };
+  delivery: {
+    name: string;
+    address: string;
+    phone: string;
+    cuit: string;
+    whatsappNumber?: string;
+    deliveryRadiusKm: number;
+    deliveryFee: number;
+    minDeliveryOrder: number;
+  };
   taxRate: number;
   currency: 'ARS';
 }
 
-// Reporte de turno
+// ============================================================
+// REPORTES
+// ============================================================
 export interface TurnReport {
   turnId: string;
+  businessId: BusinessType;
   userId: string;
   userName: string;
   shift: TurnShift;
@@ -217,11 +289,38 @@ export interface TurnReport {
   topProducts: Array<{ productId: string; name: string; quantity: number; revenue: number }>;
 }
 
-// Movimiento de stock
+export interface CashReport {
+  businessId: BusinessType;
+  date: string;
+  openingAmount: number;
+  totalCashIn: number;
+  totalCashOut: number;
+  totalTransfers: number;
+  totalCard: number;
+  totalMercadopago: number;
+  netCash: number;
+  closingAmount: number | null;
+  movementsCount: number;
+  salesCount: number;
+}
+
+export interface DailyReport {
+  date: string;
+  kiosko: CashReport | null;
+  delivery: CashReport | null;
+  totalRevenue: number;
+  totalExpenses: number;
+  netProfit: number;
+}
+
+// ============================================================
+// MOVIMIENTOS Y UTILIDADES
+// ============================================================
 export interface StockMovement {
   id: string;
   productId: string;
   productName: string;
+  businessId: BusinessType;
   type: 'in' | 'out' | 'adjustment' | 'return' | 'waste';
   quantity: number;
   previousStock: number;
@@ -234,7 +333,6 @@ export interface StockMovement {
   createdAt: string;
 }
 
-// Cliente para delivery
 export interface Customer {
   id: string;
   name: string;
@@ -250,7 +348,6 @@ export interface Customer {
   createdAt: string;
 }
 
-// Configuración de escaneo
 export interface ScanResult {
   barcode: string;
   product?: Product;
@@ -258,7 +355,6 @@ export interface ScanResult {
   isNew: boolean;
 }
 
-// Notificación toast
 export interface ToastMessage {
   id: string;
   type: 'success' | 'error' | 'warning' | 'info';

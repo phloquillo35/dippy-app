@@ -35,7 +35,7 @@ export default function UsersScreen() {
     }
 
     try {
-      startTurn(shift);
+      startTurn('kiosko', shift);
       Alert.alert('✅ Turno Iniciado', `Turno de ${shift} comenzado`);
     } catch (error) {
       Alert.alert('Error', (error as Error).message);

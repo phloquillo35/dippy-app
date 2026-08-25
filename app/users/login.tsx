@@ -17,7 +17,7 @@ export default function UserLoginScreen() {
     const user = activeUsers.find(u => u.id === selectedUserId);
     if (user) {
       await login(user.email || `${user.id}@dippy.local`, '');
-      router.back();
+      router.replace('/');
     }
   };
 
