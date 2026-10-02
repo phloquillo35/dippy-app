@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { useOrderStore } from '@/store/orderStore';
 import { useUserStore } from '@/store/userStore';
 import { useCashStore } from '@/store/cashStore';
+import { getCashBalance } from '@/utils/cash';
 import { useColors } from '@/theme/ThemeProvider';
 import { Colors, Spacing, BorderRadius } from '@/theme';
 
@@ -24,9 +25,10 @@ export default function DeliveryHome() {
   };
 
   const todaySales = soldOrders.reduce((sum, o) => sum + o.total, 0);
+  const cashBalance = getCashBalance(report);
 
   const stats = [
-    { emoji: '💰', label: 'Caja', value: cashRegister ? `$${todaySales.toLocaleString()}` : 'Sin abrir', color: Colors.exito },
+    { emoji: '💰', label: 'Caja', value: cashRegister ? `$${cashBalance.toLocaleString()}` : 'Sin abrir', color: Colors.exito },
     { emoji: '📋', label: 'Pendientes', value: `${pendingOrders.length}`, color: pendingOrders.length > 0 ? Colors.advertencia : Colors.exito },
     { emoji: '🚀', label: 'Activos', value: `${activeOrders.length}`, color: Colors.celesteInstitucional },
     { emoji: '💵', label: 'Ventas', value: `$${todaySales.toLocaleString()}`, color: Colors.exito },
