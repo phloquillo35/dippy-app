@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { useProductStore } from '@/store/productStore';
 import { useUserStore } from '@/store/userStore';
 import { useCashStore } from '@/store/cashStore';
+import { getCashBalance } from '@/utils/cash';
 import { useColors } from '@/theme/ThemeProvider';
 import { Colors, Spacing, BorderRadius } from '@/theme';
 
@@ -15,7 +16,7 @@ export default function KioskoHome() {
   const cashRegister = useCashStore(s => s.getOpenRegister('kiosko'));
   const report = useCashStore(s => s.getBusinessReport('kiosko', new Date().toISOString().split('T')[0]));
   const lowStockProducts = useProductStore(s => s.getLowStockProducts('kiosko'));
-  const totalSales = report ? report.cashIn + report.transfersIn + report.cardIn + report.mercadopagoIn : 0;
+  const cashBalance = getCashBalance(report);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -23,7 +24,7 @@ export default function KioskoHome() {
   };
 
   const stats = [
-    { emoji: '💰', label: 'Caja', value: cashRegister ? `$${totalSales.toLocaleString()}` : 'Sin abrir', color: Colors.exito },
+    { emoji: '💰', label: 'Caja', value: cashRegister ? `$${cashBalance.toLocaleString()}` : 'Sin abrir', color: Colors.exito },
     { emoji: '📦', label: 'Stock bajo', value: `${lowStockProducts.length} items`, color: lowStockProducts.length > 0 ? Colors.advertencia : Colors.exito },
     { emoji: '🟢', label: 'Turno', value: currentTurn ? `${currentUser?.name?.split(' ')[0]}` : 'Sin turno', color: Colors.celesteInstitucional },
   ];

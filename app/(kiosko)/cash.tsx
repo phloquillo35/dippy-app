@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert 
 import { Colors, Spacing, BorderRadius } from '@/theme';
 import { useColors } from '@/theme/ThemeProvider';
 import { useCashStore } from '@/store/cashStore';
+import { getCashBalance, getCashSales } from '@/utils/cash';
 import { useUserStore } from '@/store/userStore';
 import { PaymentMethod } from '@/types';
 import { formatCurrency, formatDateTime } from '@/utils/uuid';
@@ -40,9 +41,8 @@ export default function KioskoCashScreen() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('efectivo');
   const [closingAmount, setClosingAmount] = useState('');
 
-  const totalSales = report
-    ? report.cashIn + report.transfersIn + report.cardIn + report.mercadopagoIn
-    : 0;
+  const totalSales = getCashSales(report);
+  const balance = getCashBalance(report);
 
   const handleOpenRegister = () => {
     const amount = parseFloat(initialAmount);
@@ -140,7 +140,7 @@ export default function KioskoCashScreen() {
               <Text style={styles.statusEmoji}>🟢</Text>
               <Text style={[styles.statusTitle, { color: colors.textPrimary }]}>Caja Abierta</Text>
             </View>
-            <Text style={[styles.amount, { color: Colors.exito }]}>Saldo: ${totalSales.toLocaleString()}</Text>
+            <Text style={[styles.amount, { color: Colors.exito }]}>Saldo: ${balance.toLocaleString()}</Text>
             <Text style={[styles.amount, { color: colors.textSecondary }]}>Inicial: ${report?.openingAmount.toLocaleString()}</Text>
           </View>
 

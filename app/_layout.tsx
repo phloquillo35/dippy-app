@@ -3,6 +3,10 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { WebAlertHost } from '@/components/WebAlertHost';
+import { installWebAlert } from '@/utils/webAlert';
+
+installWebAlert();
 
 export default function RootLayout() {
   return (
@@ -16,6 +20,7 @@ export default function RootLayout() {
             <Stack.Screen name="(delivery)" />
             <Stack.Screen name="(admin)" />
           </Stack>
+          <WebAlertHost />
         </ThemeProvider>
       </ErrorBoundary>
     </GestureHandlerRootView>
